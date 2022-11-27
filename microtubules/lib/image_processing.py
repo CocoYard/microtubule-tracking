@@ -75,25 +75,42 @@ def detectLine(img, line, blur, method):
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
     ## gaussian blur and enhance contrast
-    img, blured = denosing(img, blur, method)
+    # img, blured = denosing(img, blur, method)
+    img = np.array(img)
+    blured=[]
+
     ## dynamic threshold, use the mean pixel value of the two surrounding points
     # thres = (img[pix1[0] - 5:pix1[0] + 5, pix1[1] - 5:pix1[1] + 5].mean() + img[pix2[0] - 5:pix2[0] + 5,
     #                                                                         pix2[1] - 5:pix2[1] + 5].mean()) / 2
     """ """
-    s = 0
-    d = (pix1[1] - pix2[1]) / (pix1[0] - pix2[0])
-    n = 0
-    x = 1
-    if pix1[0] > pix2[0]:
-        x = -1
-    for i in range(pix1[0], pix2[0], x):
-        mid = (i - pix1[0]) * d
-        high = round(mid + 5)
-        low = round(mid - 5)
-        for j in range(low, high):
-            s += img[i, j]
-            n += 1
-    thres = s / n
+    # s = 0
+    # d = (pix1[1] - pix2[1]) / (pix1[0] - pix2[0])
+    # n = 0
+    # x = 1
+    # if pix1[0] > pix2[0]:
+    #     x = -1
+    # for i in range(pix1[0], pix2[0], x):
+    #     mid = (i - pix1[0]) * d
+    #     high = round(mid + 5)
+    #     low = round(mid - 5)
+    #     for j in range(low, high):
+    #         s += img[i, j]
+    #         n += 1
+    # thres = s / n
+
+    temp11 = max(min(pix1[0], pix2[0]) - 5, 0)
+    temp12 = min(max(pix1[0], pix2[0]) + 5, img.shape[0])
+    temp21 = max(min(pix1[1], pix2[1]) - 5, 0)
+    temp22 = min(max(pix1[1], pix2[1]) + 5, img.shape[1])
+    total = 0
+    count_nonzero = 0
+    thresholdmatrix = img[temp11:temp12, temp21:temp22]
+    for i in range(thresholdmatrix.shape[0]):
+        for j in range(thresholdmatrix.shape[1]):
+            if thresholdmatrix[i, j] > 6:
+                count_nonzero += 1
+                total += thresholdmatrix[i, j]
+    thres = total / count_nonzero
     """ """
     pix3 = (np.array(pix1) + np.array(pix2)) // 2
     # thres_max = img[pix3[0] - 5:pix3[0] + 5, pix3[1] - 5:pix3[1] + 5].max()
@@ -105,25 +122,35 @@ def detectLine(img, line, blur, method):
 
     bin_img = thresholding(img, thres)
     temp = thresholding(img, thres)
-    bin_img = closing(bin_img, 5)
+    bin_img = bin_img.astype(np.uint8)
+    bin_img = opening(bin_img, 5)
+    # bin_img = closing(bin_img, 3)
     _, label = cv.connectedComponents(bin_img)
     # find the label using the mode of the labels around the selected two points
-    # counts = np.bincount(np.ndarray.flatten(label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5]
-    #                                         ))
 
-    counts = np.bincount(np.ndarray.flatten(np.concatenate((label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5],
-                                                            label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5],
-                                                            label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5]),
-                                                           axis=0)
-                                            ))
+    counts_all = np.bincount(np.ndarray.flatten(label))
+    counts_all[0] = 0
+    counts = np.bincount(np.ndarray.flatten(label[temp11: temp12, temp21:temp22]))
+
     counts[0] = 0
 
+    # print(counts)
 
-    target_label = np.argmax(counts)
+    # target_label = np.argmax(counts)
     target_labels = np.where(counts != 0)[0]
-    # label[np.where(label not in target_label)] = 0
-    # label[np.where(label in target_labels)] = 1
-    label = np.isin(label, target_labels).astype(np.uint8)
+    targets = []
+    if len(target_labels) > 1:
+        for i in target_labels:
+            if i == np.argmax(counts):
+                targets.append(i)
+            else:
+                if (counts[i] / counts_all[i]) > 0.85:
+                    targets.append(i)
+    else:
+        targets = target_labels
+    targets = np.array(targets)
+
+    label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label
     p1 = np.array(pix1)
     p2 = np.array(pix2)
@@ -135,12 +162,12 @@ def detectLine(img, line, blur, method):
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
                 d2 = np.linalg.norm(p3 - pix3)
-                if d > 3 or d2 > 3 / 4 * l:
+                if d > l/20 or d2 > 3 / 4 * l:
                     bin_img[i, j] = 0
     # threshold
     thres_img = bin_img
     bin_img = bin_img.astype(np.uint8)
-    bin_img = erosion(bin_img, 3, 1)
+    # bin_img = erosion(bin_img, 3, 1)
     skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)
 
     result = generic_filter(skeleton, lineEnds, (3, 3))
