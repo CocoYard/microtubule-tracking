@@ -33,11 +33,12 @@ def widget_demo(
     img0 = tiff_loader.tiff_gray_image[0]
     # select a line to detect the corresponding microtubule
     # line = [[0, 106,347],[0, 112,438]]
-    for i in range(20):
+    for i in range(50):
         img0 = tiff_loader.tiff_gray_image[i]
         img, end_points, skltn, thres_img, denoise, blur, temp = image_processing.detectLine(img0, line, blur_degree, blur_method)  ##[106,347],[112,438]     [44,63],[77,150]    [405,352],[418,440] [287,85],[411,97
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
+        print(i)
 
     layer_type = 'image'
     metadata = {

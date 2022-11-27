@@ -14,10 +14,10 @@ def tiffToGray(img):
 def denosing(img, blur, method):
     if method == 'g':
         blured = cv.GaussianBlur(img, (blur, blur), 10, 10)
-        print(method, '1')
+        # print(method, '1')
     else:
         blured = cv.blur(img, (blur, blur))
-        print(method, '2')
+        # print(method, '2')
     im = Image.fromarray(np.uint8(blured))
     enhance = ImageEnhance.Contrast(im)
     im = enhance.enhance(3)
@@ -77,21 +77,53 @@ def detectLine(img, line, blur, method):
     ## gaussian blur and enhance contrast
     img, blured = denosing(img, blur, method)
     ## dynamic threshold, use the mean pixel value of the two surrounding points
-    thres = (img[pix1[0] - 5:pix1[0] + 5, pix1[1] - 5:pix1[1] + 5].mean() + img[pix2[0] - 5:pix2[0] + 5,
-                                                                            pix2[1] - 5:pix2[1] + 5].mean()) / 2
+    # thres = (img[pix1[0] - 5:pix1[0] + 5, pix1[1] - 5:pix1[1] + 5].mean() + img[pix2[0] - 5:pix2[0] + 5,
+    #                                                                         pix2[1] - 5:pix2[1] + 5].mean()) / 2
+    """ """
+    s = 0
+    d = (pix1[1] - pix2[1]) / (pix1[0] - pix2[0])
+    n = 0
+    x = 1
+    if pix1[0] > pix2[0]:
+        x = -1
+    for i in range(pix1[0], pix2[0], x):
+        mid = (i - pix1[0]) * d
+        high = round(mid + 5)
+        low = round(mid - 5)
+        for j in range(low, high):
+            s += img[i, j]
+            n += 1
+    thres = s / n
+    """ """
+    pix3 = (np.array(pix1) + np.array(pix2)) // 2
+    # thres_max = img[pix3[0] - 5:pix3[0] + 5, pix3[1] - 5:pix3[1] + 5].max()
+    # threshold = img[pix3[0] - 5:pix3[0] + 5, pix3[1] - 5:pix3[1] + 5].mean()
+
+
+    # edges = cv.Canny(img, threshold, thres_max)
+    # Image.fromarray(np.uint8(edges)).show()
 
     bin_img = thresholding(img, thres)
     temp = thresholding(img, thres)
     bin_img = closing(bin_img, 5)
     _, label = cv.connectedComponents(bin_img)
     # find the label using the mode of the labels around the selected two points
-    counts = np.bincount(np.ndarray.flatten(np.concatenate((label[pix1[0] - 5: pix1[0] + 5, pix1[1] - 5:pix1[1] + 5],
-                                                            label[pix2[0] - 5: pix2[0] + 5, pix2[1] - 5:pix2[1] + 5]),
-                                                           axis=0)))
+    # counts = np.bincount(np.ndarray.flatten(label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5]
+    #                                         ))
+
+    counts = np.bincount(np.ndarray.flatten(np.concatenate((label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5],
+                                                            label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5],
+                                                            label[pix3[0] - 5: pix3[0] + 5, pix3[1] - 5:pix3[1] + 5]),
+                                                           axis=0)
+                                            ))
     counts[0] = 0
+
+
     target_label = np.argmax(counts)
-    label[label != target_label] = 0
-    label[label == target_label] = 1
+    target_labels = np.where(counts != 0)[0]
+    # label[np.where(label not in target_label)] = 0
+    # label[np.where(label in target_labels)] = 1
+    label = np.isin(label, target_labels).astype(np.uint8)
     bin_img = bin_img * label
     p1 = np.array(pix1)
     p2 = np.array(pix2)
@@ -102,8 +134,8 @@ def detectLine(img, line, blur, method):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
-
-                if d > 3:
+                d2 = np.linalg.norm(p3 - pix3)
+                if d > 3 or d2 > 3 / 4 * l:
                     bin_img[i, j] = 0
     # threshold
     thres_img = bin_img
