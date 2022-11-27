@@ -12,16 +12,22 @@ def tiffToGray(img):
 
 
 def denosing(img, blur, method):
-    if method == 'g':
-        blured = cv.GaussianBlur(img, (blur, blur), 10, 10)
-        # print(method, '1')
-    else:
-        blured = cv.blur(img, (blur, blur))
-        # print(method, '2')
-    im = Image.fromarray(np.uint8(blured))
-    enhance = ImageEnhance.Contrast(im)
-    im = enhance.enhance(3)
-    im = np.array(im)
+    # if method == 'g':
+    #     blured = cv.GaussianBlur(img, (blur, blur), 10, 10)
+    #     # print(method, '1')
+    # else:
+    #     blured = cv.blur(img, (blur, blur))
+    #     # print(method, '2')
+    # im = Image.fromarray(np.uint8(blured))
+    # enhance = ImageEnhance.Contrast(im)
+    # im = enhance.enhance(3)
+    # im = np.array(im)
+    im = np.array(img.astype(np.uint8))
+    clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+    im = clahe.apply(im)
+    # im = np.array(im)
+    im = np.array(im.astype(np.uint8))
+    blured =[]
     return im, blured
 
 
@@ -75,9 +81,9 @@ def detectLine(img, line, blur, method):
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
     ## gaussian blur and enhance contrast
-    # img, blured = denosing(img, blur, method)
-    img = np.array(img)
-    blured=[]
+    img, blured = denosing(img, blur, method)
+    # img = np.array(img)
+    # blured=[]
 
     ## dynamic threshold, use the mean pixel value of the two surrounding points
     # thres = (img[pix1[0] - 5:pix1[0] + 5, pix1[1] - 5:pix1[1] + 5].mean() + img[pix2[0] - 5:pix2[0] + 5,
