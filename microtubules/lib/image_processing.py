@@ -11,7 +11,8 @@ def tiffToGray(img):
     return 255 * ((img - 0) / 65535)
 
 
-def denosing(img, blur, method):
+def denosing(img):
+    blured = cv.GaussianBlur(img, (3, 3), 10, 10)
     im = np.array(img.astype(np.uint8))
     clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
     im = clahe.apply(im)
@@ -32,23 +33,18 @@ def closing(img_bin, k):
 
 
 def opening(img_bin, k, d):
-    k = 10
+    print(d)
+    one_count = 0
     kernel = np.zeros((k, k), np.uint8)
-    """
-        0 0 0 0     j
-        0 0 1 0     j
-        0 1 0 0     j
-        1 0 0 0     j
-    i   i   i   i
-    
-    """
-    d = -1
-    for i in range(k):
-        mid = k + round(i * d)
-        low = max(0, mid - 2)
-        high = min(k, mid + 2)
-        for j in range(low, high):
+    offset = round((10 - d*10) / 2)
+    for j in range(k):
+        mid = round(j * d) + offset
+        low, high = max(0, mid - 2), min(k, mid + 2)
+        for i in range(low, high):
             kernel[i, j] = 1
+            one_count += 1
+    if one_count < 20:
+        kernel[:, 3:7] = 1
     print(kernel)
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
     return img_bin
@@ -70,12 +66,12 @@ def findEnds(bin_img):
     the farthest points in the connected image.
     Parameters
     ----------
-    bin_img : (0 - 255) ndarray
+    bin_img : (0 - 255) 2d array
     it may contain more than one connected component
 
     Returns
     -------
-    output : 2d list, one for each endpoint
+    output : 2d array, one for each endpoint
     """
     pts = []
     for i in range(bin_img.shape[0]):
@@ -95,7 +91,7 @@ def findEnds(bin_img):
     return output
 
 
-def detectLine(img, line, blur, method):
+def detectLine(img, line, k=10):
     """
         1. use Clahe to adjust the global contrast
         2. choose threshold to get binary image
@@ -119,7 +115,7 @@ def detectLine(img, line, blur, method):
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
     """ 1. use Clahe to adjust the global contrast """
-    img = denosing(img, blur, method)
+    img = denosing(img)
 
     # calculate derivative
     if pix2[0] < pix1[0]:
@@ -127,11 +123,9 @@ def detectLine(img, line, blur, method):
         temp = pix2.copy()
         pix2 = pix1.copy()
         pix1 = temp
-    x1 = pix1[0]
-    x2 = pix2[0]
-    y1 = pix1[1]
-    y2 = pix2[1]
-    d = (y2 - y1) / (x2 - x1)
+    x1, x2 = pix1[1], pix2[1]
+    y1, y2 = pix1[0], pix2[0]
+    derivative = (y2 - y1) / (x2 - x1)
     """ 2. choose threshold to get binary image """
     temp11 = max(min(pix1[0], pix2[0]) - 5, 0)
     temp12 = min(max(pix1[0], pix2[0]) + 5, img.shape[0])
@@ -154,7 +148,7 @@ def detectLine(img, line, blur, method):
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
-    bin_img = opening(bin_img, 5, d)
+    bin_img = opening(bin_img, k, derivative)
     _, label = cv.connectedComponents(bin_img)
     # find the label using the mode of the labels around the selected two points
 
