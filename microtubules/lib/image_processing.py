@@ -79,6 +79,7 @@ def findEnds(bin_img):
             if bin_img[i, j] != 0:
                 pts.append([i, j])
     max_dis = 0
+    output = 'err'
     # find the farthest distance in the binary image
     for p1 in pts:
         for p2 in pts:
@@ -183,6 +184,18 @@ def detectLine(img, line, k=10):
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label
+    p1 = np.array(pix1)
+    p2 = np.array(pix2)
+    l = np.linalg.norm(p2 - p1)
+    # delete remote points to the input line
+    for i in range(bin_img.shape[0]):
+        for j in range(bin_img.shape[1]):
+            if bin_img[i, j] != 0:
+                p3 = np.array([i, j])
+                d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
+                d2 = np.linalg.norm(p3 - pix3)
+                if d > l / 20 or d2 > 3 / 4 * l:
+                    bin_img[i, j] = 0
     bin_img = bin_img.astype(np.uint8)
     """ additional function, thinning """
     skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)

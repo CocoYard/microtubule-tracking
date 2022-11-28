@@ -37,10 +37,13 @@ def widget_demo(
         if i in frame2line:
             line = frame2line[i]
         end_points, skltn, thres_img, denoise, temp = image_processing.detectLine(img0, line, struct_size)
+        if end_points == 'err':
+            break
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
         tempv[i] = temp * 257
         print(i)
+
 
     layer_type = 'image'
     metadata = {
