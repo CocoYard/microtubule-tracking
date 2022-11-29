@@ -18,7 +18,7 @@ def widget_demo(
         draw_layer: 'napari.layers.Shapes',
         dark_layer: 'napari.layers.Shapes',
         image_layer: 'napari.layers.Image',
-        dark_ratio=2,
+        dark_ratio=84,
         struct_size=10,
         start_frame=41,
         end_frame=42,
@@ -33,6 +33,8 @@ def widget_demo(
     # prepare video data: np.array
     video = np.array(image_layer.data)
     tempv = video.copy()
+    binv = video.copy()
+    thinv = video.copy()
 
     tiff_loader = TiffLoader(video)
     polygon = dark_layer.data[0]
@@ -61,12 +63,14 @@ def widget_demo(
         img0 = tiff_loader.tiff_gray_image[i]
         if i in frame2line:
             line = frame2line[i]
-        end_points, skltn, thres_img, denoise, temp = image_processing.detectLine(img0, line, polygon, struct_size, dark_ratio)
+        end_points, skltn, thres_img, denoise, temp, first_bin = image_processing.detectLine(img0, line, polygon, struct_size, dark_ratio)
         if end_points == 'err':
             break
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
         tempv[i] = temp * 257
+        binv[i] = first_bin * 257
+        thinv[i] = skltn * 257
         print(i)
 
 
@@ -80,7 +84,17 @@ def widget_demo(
         'name': 'segment2',
         'colormap': 'gray'
     }
-    return [(video, metadata, layer_type), (tempv, metadata1, layer_type)]
+    metadata2 = {
+        'name': 'initial bin img',
+        'colormap': 'gray'
+    }
+    metadata3 = {
+        'name': 'thinning img',
+        'colormap': 'gray'
+    }
+
+    return [(tempv, metadata1, layer_type), (binv, metadata2, layer_type), (video, metadata, layer_type),
+            (video, metadata3, layer_type)]
 
 
 @magicgui(call_button="Save to local", )

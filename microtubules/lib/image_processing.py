@@ -8,7 +8,6 @@ import cv2 as cv
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
-
 def tiffToGray(img):
     return 255 * ((img - 0) / 65535)
 
@@ -69,7 +68,7 @@ def findEnds(bin_img):
     Parameters
     ----------
     bin_img : (0 - 255) 2d array
-    it may contain more than one connected component
+        it may contain more than one connected component
 
     Returns
     -------
@@ -100,13 +99,16 @@ def darken(polygon, img, ratio):
     Parameters
     ----------
     polygon : 2d array
-    the coordinates of the polygon in order.
+        the coordinates of the polygon in order.
     img : (0 - 255) 2d array
+    ratio : float
+        darkening ratio
 
     Returns
     -------
     None
     """
+    # k
     polygon = polygon.round().astype('uint')
     plygn = Polygon(polygon)
     # find the square boundary
@@ -114,12 +116,33 @@ def darken(polygon, img, ratio):
     right = polygon[:, 1].max()
     top = polygon[:, 0].min()
     bot = polygon[:, 0].max()
-    count = 0
+    dists = []
     for j in range(left, right):
         for i in range(top, bot):
             if plygn.contains(Point(i, j)):
-                img[i, j] /= ratio
-            count += 1
+                # print(i, j)
+                # print(plygn)
+                dists.append(plygn.boundary.distance(Point(i, j)))
+    dmax = max(dists)
+    print(dists)
+    print(dmax)
+    k = ratio / np.log(dmax/2 + 1)
+    m = 0
+
+    for j in range(left, right):
+        for i in range(top, bot):
+            if plygn.contains(Point(i, j)):
+                # print('k = ', k)
+                diff = k*np.log(dists[m]+1)
+                # print('diff = ', diff)
+                m += 1
+                # print('before ', img[i, j], end=' ')
+                if diff > img[i, j]:
+                    img[i, j] = 0
+                    continue
+                img[i, j] -= diff
+                # print('after ', img[i, j])
+
 
 
 def detectLine(img, line, polygon, k=10, dark_ratio=2):
@@ -173,7 +196,7 @@ def detectLine(img, line, polygon, k=10, dark_ratio=2):
     """ 3. do threshold """
     bin_img = thresholding(img, thres)
 
-    # temp = bin_img.copy()
+    first_bin = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
@@ -231,4 +254,4 @@ def detectLine(img, line, polygon, k=10, dark_ratio=2):
     result = generic_filter(skeleton, lineEnds, (3, 3))
     end_points = findEnds(result)
 
-    return end_points, skeleton, bin_img, img, temp
+    return end_points, skeleton, bin_img, img, temp, first_bin
