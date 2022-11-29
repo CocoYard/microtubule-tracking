@@ -5,6 +5,8 @@ import math
 from PIL import Image, ImageEnhance
 from skimage.morphology import medial_axis
 import cv2 as cv
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 def tiffToGray(img):
@@ -13,7 +15,7 @@ def tiffToGray(img):
 
 def denosing(img):
     blured = cv.GaussianBlur(img, (3, 3), 10, 10)
-    im = np.array(img.astype(np.uint8))
+    im = np.array(blured.astype(np.uint8))
     clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
     im = clahe.apply(im)
     im = np.array(im.astype(np.uint8))
@@ -92,7 +94,35 @@ def findEnds(bin_img):
     return output
 
 
-def detectLine(img, line, k=10):
+def darken(polygon, img, ratio):
+    """
+    in place modify the img to make the local area darker, no output.
+    Parameters
+    ----------
+    polygon : 2d array
+    the coordinates of the polygon in order.
+    img : (0 - 255) 2d array
+
+    Returns
+    -------
+    None
+    """
+    polygon = polygon.round().astype('uint')
+    plygn = Polygon(polygon)
+    # find the square boundary
+    left = polygon[:, 1].min()
+    right = polygon[:, 1].max()
+    top = polygon[:, 0].min()
+    bot = polygon[:, 0].max()
+    count = 0
+    for j in range(left, right):
+        for i in range(top, bot):
+            if plygn.contains(Point(i, j)):
+                img[i, j] /= ratio
+            count += 1
+
+
+def detectLine(img, line, polygon, k=10, dark_ratio=2):
     """
         1. use Clahe to adjust the global contrast
         2. choose threshold to get binary image
@@ -117,13 +147,11 @@ def detectLine(img, line, k=10):
     pix2 = [round(line[1][1]), round(line[1][2])]
     """ 1. use Clahe to adjust the global contrast """
     img = denosing(img)
-
+    """ dark the area """
+    if polygon is not None:
+        darken(polygon, img, dark_ratio)
+    temp = img.copy()
     # calculate derivative
-    if pix2[0] < pix1[0]:
-        # swap
-        temp = pix2.copy()
-        pix2 = pix1.copy()
-        pix1 = temp
     x1, x2 = pix1[1], pix2[1]
     y1, y2 = pix1[0], pix2[0]
     derivative = (y2 - y1) / (x2 - x1)
@@ -145,7 +173,7 @@ def detectLine(img, line, k=10):
     """ 3. do threshold """
     bin_img = thresholding(img, thres)
 
-    temp = bin_img.copy()
+    # temp = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
