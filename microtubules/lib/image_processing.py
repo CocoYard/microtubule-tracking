@@ -13,12 +13,17 @@ def tiffToGray(img):
 
 
 def denosing(img):
-    blured = cv.medianBlur(img,3)
+    img = np.array(img.astype(np.uint8))
+    blured = cv.medianBlur(img, 5)
+
     im = np.array(blured.astype(np.uint8))
-    clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+    clahe = cv.createCLAHE(clipLimit=None, tileGridSize=(8, 8))
     im = clahe.apply(im)
-    im = np.array(im.astype(np.uint8))
-    return im
+
+    im2 = np.array(img.astype(np.uint8))
+    clahe = cv.createCLAHE(clipLimit=None, tileGridSize=(8, 8))
+    im2 = clahe.apply(im2)
+    return im, im2
 
 
 def erosion(img_bin, k, t):
@@ -30,6 +35,11 @@ def erosion(img_bin, k, t):
 def closing(img_bin, k):
     kernel = np.ones((k, k), np.uint8)
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
+    return img_bin
+
+def normal_opening(img_bin, k):
+    kernel = np.ones((k, k), np.uint8)
+    img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
     return img_bin
 
 
@@ -231,7 +241,7 @@ def detectLine(img, line, polygon, k=10, dark_ratio=2):
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
     """ 1. use Clahe to adjust the global contrast """
-    img = denosing(img)
+    img2,img = denosing(img)
     """ dark the area """
     if polygon is not None:
         darken(polygon, img, dark_ratio)
@@ -257,6 +267,11 @@ def detectLine(img, line, polygon, k=10, dark_ratio=2):
     pix3 = (np.array(pix1) + np.array(pix2)) // 2
     """ 3. do threshold """
     bin_img = thresholding(img, thres)
+    img2 = thresholding(img2, thres-5)
+    img2 = img2.astype(np.uint8)
+    img2 = normal_opening(img2, 3)
+
+    bin_img = bin_img * (img2 / 255)
 
     first_bin = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
