@@ -4,6 +4,13 @@ import numpy as np
 import cv2 as cv
 
 
+def crop_img(img, x1, x2, y1, y2):
+    mask = np.zeros(img.shape)
+    mask[x1:x2,y1:y2] = 1
+    new_img = mask * img
+
+    return new_img
+
 def thresholding(img, k):
     _, img_bin = cv.threshold(img, k, img.max(), cv.THRESH_BINARY)
     return img_bin

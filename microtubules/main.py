@@ -16,8 +16,8 @@ def main(
         draw_layer: 'napari.layers.Shapes',
         image_layer: 'napari.layers.Image',
         struct_size=7,
-        start_frame=65,
-        end_frame=68,
+        start_frame=0,
+        end_frame=71,
         Hough_gap=20,
         thres_ratio=1.0,
         options='show segmentation'

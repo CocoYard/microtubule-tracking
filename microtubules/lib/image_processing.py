@@ -45,10 +45,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     thresholdmatrix = img[temp11:temp12, temp21:temp22]
     for i in range(thresholdmatrix.shape[0]):
         for j in range(thresholdmatrix.shape[1]):
-            if thresholdmatrix[i, j] > 80:
+            if thresholdmatrix[i, j] > 150:
                 count_nonzero += 1
                 total += thresholdmatrix[i, j]
-    thres = 4.8/4 * total / count_nonzero * threshold
+    thres =  total / count_nonzero * threshold
     print('thres = ', thres)
     # thres = threshold
     """ 3. do threshold """
@@ -58,6 +58,9 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     img2 = normal_opening(img2, 3)
 
     bin_img = bin_img * (img2 / 255)
+
+    bin_img = crop_img(bin_img,max(temp11-100,0), min(temp12+100, bin_img.shape[0]),
+                       max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
 
     first_bin = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
@@ -83,7 +86,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
         for labeli in target_labels:
             if labeli == np.argmax(counts):
                 targets.append(labeli)
-            else:
+            elif counts[labeli]/counts_all[labeli] >0.6:
                 targets.append(labeli)
     else:
         targets = target_labels
@@ -93,20 +96,21 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     bin_img = bin_img * label
 
     [[y1,x1,y2,x2]], derivative, hglines = line_detect_possible_demo(bin_img,pix1,pix2, gap)
+    bin_img = closing(bin_img, k, derivative)
     bin_img = opening(bin_img, k, derivative)
 
     """ 6. find all connected labels in the rectangle area formed by the Hough line """
 
     p1 = np.array([x1,y1])
     p2 = np.array([x2,y2])
-    pix3 = (np.array(pix1) + np.array(pix2)) // 2
+    pix3 = (np.array(p1) + np.array(p2)) // 2
     l = np.linalg.norm(p2 - p1)
 
     """ delete the lines whose main part not in the incline area """
-    temp11 = max(min(p1[0], p2[0]) - 2, 0)
-    temp12 = min(max(p1[0], p2[0]) + 2, img.shape[0])
-    temp21 = max(min(p1[1], p2[1]) - 2, 0)
-    temp22 = min(max(p1[1], p2[1]) + 2, img.shape[1])
+    temp11 = max(min(p1[0], p2[0]) - 5, 0)
+    temp12 = min(max(p1[0], p2[0]) + 5, img.shape[0])
+    temp21 = max(min(p1[1], p2[1]) - 5, 0)
+    temp22 = min(max(p1[1], p2[1]) + 5, img.shape[1])
     _, label = cv.connectedComponents(bin_img)
     counts_all = np.bincount(np.ndarray.flatten(label))
     toCount = []
@@ -118,7 +122,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
                 d2 = np.linalg.norm(p3 - pix3)
                 if d < 8 and d2 < 8/15 * l:     # in the incline area
                     toCount.append(label[i, j])
-    counts_incline = np.bincount(np.ndarray.flatten(label[temp11: temp12, temp21:temp22]))
+    counts_incline = np.bincount(np.array(toCount))
 
     # set the background label as 0
     counts_incline[0] = 0
@@ -143,16 +147,16 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     temp1 = bin_img.copy()
 
     # delete remote points to the Hough line
-    for i in range(bin_img.shape[0]):
-        for j in range(bin_img.shape[1]):
+    for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
+        for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
                 d2 = np.linalg.norm(p3 - pix3)
-                if d > 8 or d2 > 11/15 * l:
+                if d > 4 or d2 > 8/11 * l:
                     bin_img[i, j] = 0
     bin_img = bin_img.astype(np.uint8)
-    bin_img = closing(bin_img, k, derivative)
+    # bin_img = closing(bin_img, k, derivative)
     # bin_img = opening(bin_img, k, derivative)
     """ additional function, thinning """
     skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)

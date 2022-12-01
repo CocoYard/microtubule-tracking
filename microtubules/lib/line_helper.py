@@ -10,7 +10,7 @@ def line_detect_possible_demo(image,pix1,pix2,gap):
     hglines = blank.copy()
     d_1 = (pix1[0] - pix2[0]) / (pix1[1] - pix2[1] + 0.001)
     comp_angle = math.atan(d_1) + math.pi if math.atan(d_1) < 0 else math.atan(d_1)
-    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=30, maxLineGap=gap)
+    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=20, maxLineGap=gap)
     out = []
     min_loss = 100000
     out_d = 0
@@ -22,7 +22,7 @@ def line_detect_possible_demo(image,pix1,pix2,gap):
     for line in lines:
         # print(line)
         y1,x1,y2,x2 = line[0]
-        # hglines += draw_line(blank, x1, y1, x2, y2) * 255
+        hglines += draw_line(blank, x1, y1, x2, y2) * 255
 
         p1 = np.array([x1,y1])
         p2 = np.array([x2,y2])
@@ -53,7 +53,7 @@ def line_detect_possible_demo(image,pix1,pix2,gap):
     # out = np.round(out / len(h))
     # out_d = out_d / len(h)
     y1, x1, y2, x2 = out[0]
-    hglines += draw_line(blank, x1, y1, x2, y2) * 255
+    # hglines += draw_line(blank, x1, y1, x2, y2) * 255
     return out, out_d, hglines
 
 
