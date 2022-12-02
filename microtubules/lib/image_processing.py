@@ -54,7 +54,6 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                 total += thresholdmatrix[i, j]
     thres = total / count_nonzero * threshold
     print('thres = ', thres)
-    # thres = threshold
     """ 3. do threshold """
     bin_img = thresholding(img, thres)
     img2 = thresholding(img2, thres-5)
@@ -70,8 +69,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
+    bin_img = close_open(bin_img, k, derivative)
+    # bin_img = closing(bin_img, k, derivative)
     # bin_img = opening(bin_img, k, derivative)
-    bin_img = closing(bin_img, k, derivative)
+
     _, label = cv.connectedComponents(bin_img)
     # find the labels in the square area
     counts_all = np.bincount(np.ndarray.flatten(label))
@@ -91,7 +92,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
         for labeli in target_labels:
             if labeli == np.argmax(counts):
                 targets.append(labeli)
-            elif counts[labeli]/counts_all[labeli] >0.6:
+            elif counts[labeli]/counts_all[labeli] > 0.6:
                 targets.append(labeli)
     else:
         targets = target_labels
@@ -100,10 +101,11 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     label = np.isin(label, targets).astype(np.uint8)
     temp = bin_img.copy()
     bin_img = bin_img * label
-    [[y1,x1,y2,x2]], derivative, hglines = line_detect_possible_demo(bin_img,pix1,pix2, hgthres, gap)
-    bin_img = closing(bin_img, k, derivative)
-    bin_img = opening(bin_img, k, derivative)
     temp1 = bin_img.copy()
+    [[y1,x1,y2,x2]], derivative, hglines, hgline = line_detect_possible_demo(bin_img,pix1,pix2, hgthres, gap)
+    bin_img = close_open(bin_img, k, derivative)
+    # bin_img = closing(bin_img, k, derivative)
+    # bin_img = opening(bin_img, k, derivative)
 
     """ 6. find all connected labels in the rectangle area formed by the Hough line """
 
@@ -113,13 +115,13 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     l = np.linalg.norm(p2 - p1)
 
     """ delete the lines whose main part not in the incline area """
-    temp11 = max(min(p1[0], p2[0]) - 5, 0)
-    temp12 = min(max(p1[0], p2[0]) + 5, img.shape[0])
-    temp21 = max(min(p1[1], p2[1]) - 5, 0)
-    temp22 = min(max(p1[1], p2[1]) + 5, img.shape[1])
+    # temp11 = max(min(p1[0], p2[0]) - 5, 0)
+    # temp12 = min(max(p1[0], p2[0]) + 5, img.shape[0])
+    # temp21 = max(min(p1[1], p2[1]) - 5, 0)
+    # temp22 = min(max(p1[1], p2[1]) + 5, img.shape[1])
     # delete remote points to the Hough line
-    for i in range(max(temp11-120,0), min(temp12+120, bin_img.shape[0])):
-        for j in range(max(temp21-120,0), min(temp22+120, bin_img.shape[1])):
+    for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
+        for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
@@ -127,12 +129,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                 if d > 6 or d2 > 6/11 * l:
                     bin_img[i, j] = 0
     bin_img = bin_img.astype(np.uint8)
-    # bin_img = closing(bin_img, k, derivative)
-    # bin_img = opening(bin_img, k, derivative)
     """ additional function, thinning """
     skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)
     """"""
     # result = generic_filter(skeleton, lineEnds, (3, 3))
     # end_points = findEnds(result)
     end_points = [p1, p2]
-    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines
+    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines, hgline

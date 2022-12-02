@@ -8,8 +8,8 @@ def crop_img(img, x1, x2, y1, y2):
     mask = np.zeros(img.shape)
     mask[x1:x2,y1:y2] = 1
     new_img = mask * img
-
     return new_img
+
 
 def thresholding(img, k):
     _, img_bin = cv.threshold(img, k, img.max(), cv.THRESH_BINARY)
@@ -35,9 +35,22 @@ def erosion(img_bin, k, t):
     img_bin = cv.erode(img_bin, kernel, iterations=t)
     return img_bin
 
+# preallocate empty array and assign slice by chrisaycock
+# at https://stackoverflow.com/questions/30399534/shift-elements-in-a-numpy-array
+def shift(arr, num, fill_value=np.nan):
+    result = np.empty_like(arr)
+    if num > 0:
+        result[:num] = fill_value
+        result[num:] = arr[:-num]
+    elif num < 0:
+        result[num:] = fill_value
+        result[:num] = arr[-num:]
+    else:
+        result[:] = arr
+    return result
+
 
 def closing(img_bin, k, d):
-    one_count = 0
     kernel = np.zeros((k, k), np.uint8)
     if -1 < d < 1:
         offset = round((k - d * k + 1) / 2)
@@ -46,7 +59,21 @@ def closing(img_bin, k, d):
             low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
             for i in range(low, high):
                 kernel[i, j] = 1
-                one_count += 1
+        up, down = 0, 0
+        for i in range(k):
+            if kernel[i, 0] == 1:
+                up = i
+                break
+        for i in range(k-1, -1, -1):
+            if kernel[i, -1] == 1:
+                down = k-1-i
+                break
+        if up - down > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], -1, 0)
+        elif down - up > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], 1, 0)
     else:
         d = 1/d
         offset = round((k - d * k + 1) / 2)
@@ -55,8 +82,164 @@ def closing(img_bin, k, d):
             low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
             for j in range(low, high):
                 kernel[i, j] = 1
-                one_count += 1
+        front, back = 0, 0
+        for j in range(k):
+            if kernel[-1, j] == 1:
+                front = j
+                break
+        for j in range(k-1, -1, -1):
+            if kernel[0, j] == 1:
+                back = k-1-j
+                break
+        if front - back > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], -1, 0)
+        elif back - front > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], 1, 0)
+
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
+    return img_bin
+
+
+def opening(img_bin, k, d):
+    print(d)
+    kernel = np.zeros((k, k), np.uint8)
+    if -1 < d < 1:
+        offset = round((k - d * k + 1) / 2)
+        for j in range(k):
+            mid = round(j * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for i in range(low, high):
+                kernel[i, j] = 1
+        up, down = 0, 0
+        for i in range(k):
+            if kernel[i, 0] == 1:
+                up = i
+                break
+        for i in range(k-1, -1, -1):
+            if kernel[i, -1] == 1:
+                down = k-1-i
+                break
+        if up - down > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], -1, 0)
+        elif down - up > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], 1, 0)
+    else:
+        d = 1/d
+        offset = round((k - d * k + 1) / 2)
+        for i in range(k):
+            mid = round(i * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for j in range(low, high):
+                kernel[i, j] = 1
+        front, back = 0, 0
+        for j in range(k):
+            if kernel[-1, j] == 1:
+                front = j
+                break
+        for j in range(k-1, -1, -1):
+            if kernel[0, j] == 1:
+                back = k-1-j
+                break
+        if front - back > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], -1, 0)
+        elif back - front > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], 1, 0)
+    print(kernel)
+    img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
+    return img_bin
+
+
+def close_open(img_bin, k, d):
+    kernel = np.zeros((k, k), np.uint8)
+    if -1 < d < 1:
+        offset = round((k - d * k + 1) / 2)
+        for j in range(k):
+            mid = round(j * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for i in range(low, high):
+                kernel[i, j] = 1
+        up, down = 0, 0
+        for i in range(k):
+            if kernel[i, 0] == 1:
+                up = i
+                break
+        for i in range(k-1, -1, -1):
+            if kernel[i, -1] == 1:
+                down = k-1-i
+                break
+        if up - down > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], -1, 0)
+        elif down - up > 1:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], 1, 0)
+    else:
+        d = 1/d
+        offset = round((k - d * k + 1) / 2)
+        for i in range(k):
+            mid = round(i * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for j in range(low, high):
+                kernel[i, j] = 1
+        front, back = 0, 0
+        for j in range(k):
+            if kernel[-1, j] == 1:
+                front = j
+                break
+        for j in range(k-1, -1, -1):
+            if kernel[0, j] == 1:
+                back = k-1-j
+                break
+        if front - back > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], -1, 0)
+        elif back - front > 1:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], 1, 0)
+        d = 1/d
+
+    img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
+
+    if -1 < d < 1:
+        up, down = 0, 0
+        for i in range(k):
+            if kernel[i, 0] == 1:
+                up = i
+                break
+        for i in range(k - 1, -1, -1):
+            if kernel[i, -1] == 1:
+                down = k - 1 - i
+                break
+        if up - down > 0:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], -1, 0)
+        elif down - up > 0:
+            for j in range(k):
+                kernel[:, j] = shift(kernel[:, j], 1, 0)
+    else:
+        front, back = 0, 0
+        for j in range(k):
+            if kernel[-1, j] == 1:
+                front = j
+                break
+        for j in range(k - 1, -1, -1):
+            if kernel[0, j] == 1:
+                back = k - 1 - j
+                break
+        if front - back > 0:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], -1, 0)
+        elif back - front > 0:
+            for i in range(k):
+                kernel[i] = shift(kernel[i], 1, 0)
+    print(kernel)
+    img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
     return img_bin
 
 
@@ -68,32 +251,6 @@ def normal_closing(img_bin, k):
 
 def normal_opening(img_bin, k):
     kernel = np.ones((k, k), np.uint8)
-    img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
-    return img_bin
-
-
-def opening(img_bin, k, d):
-    print(d)
-    one_count = 0
-    kernel = np.zeros((k, k), np.uint8)
-    if -1 < d < 1:
-        offset = round((k - d * k + 1) / 2)
-        for j in range(k):
-            mid = round(j * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
-            for i in range(low, high):
-                kernel[i, j] = 1
-                one_count += 1
-    else:
-        d = 1/d
-        offset = round((k - d * k + 1) / 2)
-        for i in range(k):
-            mid = round(i * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
-            for j in range(low, high):
-                kernel[i, j] = 1
-                one_count += 1
-    print(kernel)
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
     return img_bin
 

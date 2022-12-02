@@ -18,7 +18,7 @@ def main(
         struct_size=7,
         start_frame=0,
         end_frame=71,
-        Hough_threshold=10,
+        Hough_threshold=30,
         Hough_gap=10,
         thres_ratio=1.0,
         options='show segmentation'
@@ -35,6 +35,7 @@ def main(
     binv = video.copy()
     thinv = video.copy()
     hglinesv = video.copy()
+    hglinev = video.copy()
 
     tiff_loader = TiffLoader(video)
     if start_frame not in frame2line:
@@ -45,7 +46,7 @@ def main(
         img = tiff_loader.tiff_gray_image[i]
         if i in frame2line:
             line = frame2line[i]
-        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines = image_processing.detectLine(img, line,
+        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines, hgline = image_processing.detectLine(img, line,
                                                                                                              struct_size, Hough_gap, thres_ratio, Hough_threshold)
         if end_points == 'err':
             print("error occured")
@@ -53,18 +54,18 @@ def main(
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
         tempv[i] = temp * 257
+        tempv1[i] = temp1 * 257
         binv[i] = first_bin * 257
         thinv[i] = skltn * 257
         hglinesv[i] = hglines * 257
-        tempv1[i] = temp1 * 257
+        hglinev[i] = hgline * 257
         print(i)
         print('new end points = ', end_points)
 
     layer_type = 'image'
     metadata = {
-        'name': 'segment',
-        'colormap': 'blue',
-        'opacity': 0.4
+        'name': 'temp1',
+        'colormap': 'gray'
     }
     metadata1 = {
         'name': 'temp',
@@ -75,17 +76,21 @@ def main(
         'colormap': 'gray'
     }
     metadata3 = {
-        'name': 'thinning img',
-        'colormap': 'gray'
+        'name': 'segment',
+        'colormap': 'red',
+        'blending': 'additive'
     }
     metadata4 = {
-        'name': 'temp1',
+        'name': 'ghlines',
+        'colormap': 'gray'
+    }
+    metadata5 = {
+        'name': 'tgt_ghline',
         'colormap': 'gray'
     }
 
-    return [(tempv1, metadata4, layer_type), (tempv, metadata1, layer_type), (binv, metadata2, layer_type), (video, metadata, layer_type),
-            (hglinesv, metadata3, layer_type)]
-
+    return [(tempv1, metadata, layer_type), (tempv, metadata1, layer_type), (binv, metadata2, layer_type), (video, metadata3, layer_type),
+            (hglinesv, metadata4, layer_type), (hglinev, metadata5, layer_type)]
 
 
 @magicgui(
