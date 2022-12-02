@@ -3,14 +3,14 @@ import math
 import cv2 as cv
 
 
-def line_detect_possible_demo(image,pix1,pix2,gap):
+def line_detect_possible_demo(image,pix1,pix2,thres, gap):
     w1 = 0.003
     w2 = 10
     blank = np.zeros(image.shape)
     hglines = blank.copy()
     d_1 = (pix1[0] - pix2[0]) / (pix1[1] - pix2[1] + 0.001)
     comp_angle = math.atan(d_1) + math.pi if math.atan(d_1) < 0 else math.atan(d_1)
-    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=20, maxLineGap=gap)
+    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=thres, maxLineGap=gap)
     out = []
     min_loss = 100000
     out_d = 0
@@ -28,10 +28,10 @@ def line_detect_possible_demo(image,pix1,pix2,gap):
         p2 = np.array([x2,y2])
         d = (x1 - x2) / (y1 - y2 + 0.001)
         angle = math.atan(d) + math.pi if math.atan(d) < 0 else math.atan(d)
-        loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + w2 * abs(angle-comp_angle)
-        loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + w2 * abs(comp_angle-angle)
+        loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + w2 * abs(angle-comp_angle) - 0.1*math.sqrt((x1-x2)**2 + (y1-y2)**2)
+        loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + w2 * abs(comp_angle-angle) - 0.1*math.sqrt((x1-x2)**2 + (y1-y2)**2)
         loss = min(loss1,loss2)
-        item = (-loss, line, d)
+        # item = (-loss, line, d)
         # if len(h) < 2:
         #     heapq.heappush(h, item)
         # elif loss > h[0][0]:
@@ -41,7 +41,8 @@ def line_detect_possible_demo(image,pix1,pix2,gap):
             min_loss = loss
             out = line
             out_d = d
-            # print('selected line ', line, (loss - w2 * abs(angle-comp_angle)), ' and ', abs(angle-comp_angle) * w2)
+            print('selected line ', line, (loss - w2 * abs(angle-comp_angle) + 0.1*math.sqrt((x1-x2)**2 + (y1-y2)**2)), ' and ', abs(angle-comp_angle) * w2,
+                  ' and ', 0.1*math.sqrt((x1-x2)**2 + (y1-y2)**2))
     # for i in range(0, len(h)):
     #     y1,x1,y2,x2 = h[i][1][0]
     #     hglines += draw_line(blank, x1, y1, x2, y2) * 255

@@ -18,7 +18,8 @@ def main(
         struct_size=7,
         start_frame=0,
         end_frame=71,
-        Hough_gap=20,
+        Hough_threshold=10,
+        Hough_gap=10,
         thres_ratio=1.0,
         options='show segmentation'
 ) -> typing.List[napari.types.LayerDataTuple]:
@@ -45,7 +46,7 @@ def main(
         if i in frame2line:
             line = frame2line[i]
         end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines = image_processing.detectLine(img, line,
-                                                                                                             struct_size, Hough_gap, thres_ratio)
+                                                                                                             struct_size, Hough_gap, thres_ratio, Hough_threshold)
         if end_points == 'err':
             print("error occured")
             break

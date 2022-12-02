@@ -39,16 +39,29 @@ def erosion(img_bin, k, t):
 def closing(img_bin, k, d):
     one_count = 0
     kernel = np.zeros((k, k), np.uint8)
-    offset = round((k - d*k + 1) / 2)
-    for j in range(k):
-        mid = round(j * d) + offset
-        low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
-        for i in range(low, high):
-            kernel[i, j] = 1
-            one_count += 1
-    if one_count < k:
-        kernel = np.zeros((k, k), np.uint8)
-        kernel[:, k//3:2*k//3] = 1
+    if -1 < d < 1:
+        offset = round((k - d * k + 1) / 2)
+        for j in range(k):
+            mid = round(j * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for i in range(low, high):
+                kernel[i, j] = 1
+                one_count += 1
+    else:
+        d = 1/d
+        offset = round((k - d * k + 1) / 2)
+        for i in range(k):
+            mid = round(i * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for j in range(low, high):
+                kernel[i, j] = 1
+                one_count += 1
+    img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
+    return img_bin
+
+
+def normal_closing(img_bin, k):
+    kernel = np.ones((k, k), np.uint8)
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
     return img_bin
 
@@ -63,16 +76,23 @@ def opening(img_bin, k, d):
     print(d)
     one_count = 0
     kernel = np.zeros((k, k), np.uint8)
-    offset = round((k - d*k + 1) / 2)
-    for j in range(k):
-        mid = round(j * d) + offset
-        low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
-        for i in range(low, high):
-            kernel[i, j] = 1
-            one_count += 1
-    if one_count < k:
-        kernel = np.zeros((k, k), np.uint8)
-        kernel[:, k//3:2*k//3] = 1
+    if -1 < d < 1:
+        offset = round((k - d * k + 1) / 2)
+        for j in range(k):
+            mid = round(j * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for i in range(low, high):
+                kernel[i, j] = 1
+                one_count += 1
+    else:
+        d = 1/d
+        offset = round((k - d * k + 1) / 2)
+        for i in range(k):
+            mid = round(i * d) + offset
+            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            for j in range(low, high):
+                kernel[i, j] = 1
+                one_count += 1
     print(kernel)
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_OPEN, kernel)
     return img_bin

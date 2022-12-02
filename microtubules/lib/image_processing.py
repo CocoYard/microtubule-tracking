@@ -10,7 +10,7 @@ def tiffToGray(img):
     return 255 * ((img - 0) / 65535)
 
 
-def detectLine(img, line, k=10, gap=10, threshold=1):
+def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     """
         1. use Clahe to adjust the global contrast
         2. choose threshold to get binary image
@@ -35,6 +35,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     pix2 = [round(line[1][1]), round(line[1][2])]
     """ 1. use Clahe to adjust the global contrast """
     img2, img = denosing(img)
+    # calculate derivative
+    x1, x2 = pix1[1], pix2[1]
+    y1, y2 = pix1[0], pix2[0]
+    derivative = (y2 - y1) / (x2 - x1+0.001)
     """ 2. choose threshold to get binary image """
     temp11 = max(min(pix1[0], pix2[0]) - 5, 0)
     temp12 = min(max(pix1[0], pix2[0]) + 5, img.shape[0])
@@ -48,7 +52,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
             if thresholdmatrix[i, j] > 150:
                 count_nonzero += 1
                 total += thresholdmatrix[i, j]
-    thres =  total / count_nonzero * threshold
+    thres = total / count_nonzero * threshold
     print('thres = ', thres)
     # thres = threshold
     """ 3. do threshold """
@@ -67,6 +71,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
 
     """ 4. solve the cross problem by opening in one direction """
     # bin_img = opening(bin_img, k, derivative)
+    bin_img = closing(bin_img, k, derivative)
     _, label = cv.connectedComponents(bin_img)
     # find the labels in the square area
     counts_all = np.bincount(np.ndarray.flatten(label))
@@ -93,11 +98,12 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     targets = np.array(targets)
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
+    temp = bin_img.copy()
     bin_img = bin_img * label
-
-    [[y1,x1,y2,x2]], derivative, hglines = line_detect_possible_demo(bin_img,pix1,pix2, gap)
+    [[y1,x1,y2,x2]], derivative, hglines = line_detect_possible_demo(bin_img,pix1,pix2, hgthres, gap)
     bin_img = closing(bin_img, k, derivative)
     bin_img = opening(bin_img, k, derivative)
+    temp1 = bin_img.copy()
 
     """ 6. find all connected labels in the rectangle area formed by the Hough line """
 
@@ -111,49 +117,14 @@ def detectLine(img, line, k=10, gap=10, threshold=1):
     temp12 = min(max(p1[0], p2[0]) + 5, img.shape[0])
     temp21 = max(min(p1[1], p2[1]) - 5, 0)
     temp22 = min(max(p1[1], p2[1]) + 5, img.shape[1])
-    _, label = cv.connectedComponents(bin_img)
-    counts_all = np.bincount(np.ndarray.flatten(label))
-    toCount = []
-    for i in range(temp11, temp12):
-        for j in range(temp21, temp22):
-            if label[i, j] != 0:    # not background
-                p3 = np.array([i, j])
-                d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
-                d2 = np.linalg.norm(p3 - pix3)
-                if d < 8 and d2 < 8/15 * l:     # in the incline area
-                    toCount.append(label[i, j])
-    counts_incline = np.bincount(np.array(toCount))
-
-    # set the background label as 0
-    counts_incline[0] = 0
-
-    # all labels in the incline area
-    target_labels = np.where(counts_incline != 0)[0]
-    targets = []
-    if len(target_labels) > 1:
-        for labeli in target_labels:
-            if labeli == np.argmax(counts_incline):
-                targets.append(labeli)
-            # main part of the label is in the incline area
-            elif counts_incline[labeli] / counts_all[labeli] > 0.7:
-                targets.append(labeli)
-    else:
-        targets = target_labels
-    targets = np.array(targets)
-    # extract all pixels of the target labels
-    label = np.isin(label, targets).astype(np.uint8)
-    temp = bin_img.copy()
-    bin_img = bin_img * label
-    temp1 = bin_img.copy()
-
     # delete remote points to the Hough line
-    for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
-        for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):
+    for i in range(max(temp11-120,0), min(temp12+120, bin_img.shape[0])):
+        for j in range(max(temp21-120,0), min(temp22+120, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
                 d2 = np.linalg.norm(p3 - pix3)
-                if d > 4 or d2 > 8/11 * l:
+                if d > 6 or d2 > 6/11 * l:
                     bin_img[i, j] = 0
     bin_img = bin_img.astype(np.uint8)
     # bin_img = closing(bin_img, k, derivative)
