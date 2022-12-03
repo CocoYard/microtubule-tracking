@@ -17,7 +17,7 @@ class TiffLoader:
         self.tiff_image = []
         self.tiff_gray_image = []
 
-        ## extract each frame from the tiff video
+        # extract each frame from the tiff video
         for i in range(self.tiff_frames_num):
             temp = video[i]
             self.tiff_image.append(temp)

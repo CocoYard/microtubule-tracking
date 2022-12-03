@@ -69,9 +69,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
+    temp = bin_img.copy()
+    bin_img = opening(bin_img, k//2, derivative)
     bin_img = close_open(bin_img, k, derivative)
     # bin_img = closing(bin_img, k, derivative)
-    # bin_img = opening(bin_img, k, derivative)
 
     _, label = cv.connectedComponents(bin_img)
     # find the labels in the square area
@@ -99,7 +100,6 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     targets = np.array(targets)
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
-    temp = bin_img.copy()
     bin_img = bin_img * label
     temp1 = bin_img.copy()
     [[y1,x1,y2,x2]], derivative, hglines, hgline = line_detect_possible_demo(bin_img,pix1,pix2, hgthres, gap)
@@ -115,10 +115,6 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     l = np.linalg.norm(p2 - p1)
 
     """ delete the lines whose main part not in the incline area """
-    # temp11 = max(min(p1[0], p2[0]) - 5, 0)
-    # temp12 = min(max(p1[0], p2[0]) + 5, img.shape[0])
-    # temp21 = max(min(p1[1], p2[1]) - 5, 0)
-    # temp22 = min(max(p1[1], p2[1]) + 5, img.shape[1])
     # delete remote points to the Hough line
     for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
         for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):

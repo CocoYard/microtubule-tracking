@@ -18,8 +18,8 @@ def thresholding(img, k):
 
 def denosing(img):
     img = np.array(img.astype(np.uint8))
-    blured = cv.medianBlur(img, 5)
-
+    # blured = cv.medianBlur(img, 11)
+    blured = img
     im = np.array(blured.astype(np.uint8))
     clahe = cv.createCLAHE(clipLimit=None, tileGridSize=(8, 8))
     im = clahe.apply(im)
@@ -257,7 +257,7 @@ def normal_opening(img_bin, k):
 
 def darken(polygon, img, ratio):
     """
-    in place modify the img to make the local area darker, no output.
+    in place operate the img to make the local area darker, no output.
     Parameters
     ----------
     polygon : 2d array
@@ -274,31 +274,24 @@ def darken(polygon, img, ratio):
     polygon = polygon.round().astype('uint')
     plygn = Polygon(polygon)
     # find the square boundary
-    left = polygon[:, 1].min()
-    right = polygon[:, 1].max()
-    top = polygon[:, 0].min()
-    bot = polygon[:, 0].max()
+    left = max(polygon[:, 1].min(), 0)
+    right = min(polygon[:, 1].max(), img.shape[1])
+    top = max(polygon[:, 0].min(), 0)
+    bot = min(polygon[:, 0].max(), img.shape[0])
     dists = []
     for j in range(left, right):
         for i in range(top, bot):
             if plygn.contains(Point(i, j)):
-                # print(i, j)
-                # print(plygn)
                 dists.append(plygn.boundary.distance(Point(i, j)))
     dmax = max(dists)
-    # print(dists)
-    # print(dmax)
     k = ratio / np.log(dmax/2 + 1)
     m = 0
 
     for j in range(left, right):
         for i in range(top, bot):
             if plygn.contains(Point(i, j)):
-                # print('k = ', k)
                 diff = k*np.log(dists[m]+1)
-                # print('diff = ', diff)
                 m += 1
-                # print('before ', img[i, j], end=' ')
                 if diff > img[i, j]:
                     img[i, j] = 0
                     continue

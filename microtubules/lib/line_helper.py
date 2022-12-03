@@ -40,8 +40,8 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
             min_loss = loss
             out = line
             out_d = d
-            print('selected line ', line, loss - rotation + main_length, ' and ', rotation,
-                  ' and ', - main_length)
+            # print('selected line ', line, loss - rotation + main_length, ' and ', rotation,
+            #       ' and ', - main_length)
     return out, out_d, hglines, tgt_hgline
 
 

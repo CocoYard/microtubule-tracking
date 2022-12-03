@@ -17,8 +17,8 @@ def main(
         image_layer: 'napari.layers.Image',
         struct_size=7,
         start_frame=0,
-        end_frame=71,
-        Hough_threshold=30,
+        end_frame=121,
+        Hough_threshold=15,
         Hough_gap=10,
         thres_ratio=1.0,
         options='show segmentation'
@@ -42,7 +42,7 @@ def main(
         print("Please draw a line to specify a microtubule")
         return []
     # select a line to detect the corresponding microtubule
-    for i in range(start_frame, end_frame):
+    for i in range(start_frame, min(end_frame, len(video))):
         img = tiff_loader.tiff_gray_image[i]
         if i in frame2line:
             line = frame2line[i]
@@ -96,32 +96,26 @@ def main(
 @magicgui(
     call_button="Darken"
 )
-def darken(
+def darken_img(
         dark_layer: 'napari.layers.Shapes',
         image_layer: 'napari.layers.Image',
         dark_ratio=84,
-        start_frame=120,
+        start_frame=0,
         end_frame=68
 ) -> napari.types.LayerDataTuple:
+    # the whole output img may look not like the original one. It is the Napari's displaying issue but
+    # the pixel values are the same.
+
     # prepare video data: np.array
     video = np.array(image_layer.data)
     tiff_loader = TiffLoader(video)
     polygon = dark_layer.data[0]
-    # polygon = np.array([[41., 253.92413287, 76.63881398],
-    #        [41., 269.68282815, 133.37011699],
-    #        [41., 250.77239381, 249.19652729],
-    #        [41., 212.16359038, 256.28794016],
-    #        [41., 200.34456892, 221.61881055],
-    #        [41., 198.76869939, 153.06848609],
-    #        [41., 216.89119896, 92.39750926],
-    #        [41., 233.437829, 73.48707493]])
     polygon = polygon[:, 1:]
     for i in range(start_frame, min(end_frame, len(video))):
         img = tiff_loader.tiff_gray_image[i]
-        dark_img = darken(polygon, img, dark_ratio)
-        video[i] = dark_img * 257
+        darken(polygon, img, dark_ratio)
+        video[i] = img * 257
         print(i)
-
     layer_type = 'image'
     metadata = {
         'name': 'darken',
@@ -138,6 +132,6 @@ def save(image_layer: 'napari.layers.Image', ):
 
 viewer = napari.Viewer()
 viewer.window.add_dock_widget(main)
-viewer.window.add_dock_widget(darken)
+viewer.window.add_dock_widget(darken_img)
 viewer.window.add_dock_widget(save)
 napari.run()
