@@ -1,3 +1,4 @@
+import collections
 import numpy as np
 from scipy.ndimage import generic_filter
 from skimage.morphology import medial_axis
@@ -61,32 +62,41 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     img2 = normal_opening(img2, 3)
 
     bin_img = bin_img * (img2 / 255)
-
-    bin_img = crop_img(bin_img,max(temp11-100,0), min(temp12+100, bin_img.shape[0]),
-                       max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
+    #
+    # bin_img = crop_img(bin_img,max(temp11-100,0), min(temp12+100, bin_img.shape[0]),
+    #                    max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
 
     first_bin = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
-
-    """ 4. solve the cross problem by opening in one direction """
+    bin_img = opening(bin_img, 4, derivative)
+    bin_img = closing(bin_img, 4, derivative)
     temp = bin_img.copy()
-    bin_img = opening(bin_img, k//2, derivative)
-    bin_img = close_open(bin_img, k, derivative)
-    # bin_img = closing(bin_img, k, derivative)
 
     _, label = cv.connectedComponents(bin_img)
     # find the labels in the square area
     counts_all = np.bincount(np.ndarray.flatten(label))
     counts_all[0] = 0
     # label -> number of label
-    counts = np.bincount(np.ndarray.flatten(label[temp11: temp12, temp21:temp22]))
+    counts = collections.defaultdict(int)
+    for i in range(max(temp11,0), min(temp12, bin_img.shape[0])):
+        for j in range(max(temp21,0), min(temp22, bin_img.shape[1])):
+            if bin_img[i, j] != 0:
+                p3 = np.array([i, j])
+                d = abs(np.cross(np.array(pix2) - np.array(pix1), p3 - np.array(pix1)) / np.linalg.norm(np.array(pix2) - np.array(pix1)))
+                if d < 15:
+                    counts[label[i, j]] += 1
+    # counts = np.bincount(np.ndarray.flatten(label[temp11: temp12, temp21:temp22]))
 
     # set the background label as 0
     counts[0] = 0
 
     # target_label = np.argmax(counts)
     # all label indices which are inside the rectangle area formed by the end points
-    target_labels = np.where(counts != 0)[0]
+    target_labels = []
+    for key in counts.keys():
+        if counts[key] != 0:
+            target_labels.append(key)
+    # target_labels = np.where(counts != 0)[0]
     targets = []
     """ 5. find all connected labels in the rectangle area formed by the input """
     if len(target_labels) > 1:
@@ -95,13 +105,22 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                 targets.append(labeli)
             elif counts[labeli]/counts_all[labeli] > 0.6:
                 targets.append(labeli)
+            elif should_include(np.isin(label, [labeli]).astype(np.uint8) * bin_img, pix1, pix2, hgthres, gap):
+                targets.append(labeli)
     else:
         targets = target_labels
     targets = np.array(targets)
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label
+    """ 4. solve the cross problem by opening in one direction """
+    bin_img = opening(bin_img, 4, derivative)
+    bin_img = close_open(bin_img, k, derivative)
     temp1 = bin_img.copy()
+
+    # bin_img = closing(bin_img, k, derivative)
+
+
     [[y1,x1,y2,x2]], derivative, hglines, hgline = line_detect_possible_demo(bin_img,pix1,pix2, hgthres, gap)
     bin_img = close_open(bin_img, k, derivative)
     # bin_img = closing(bin_img, k, derivative)
@@ -116,8 +135,11 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
 
     """ delete the lines whose main part not in the incline area """
     # delete remote points to the Hough line
-    for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
-        for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):
+    for i in range(bin_img.shape[0]):
+        for j in range(bin_img.shape[1]):
+            if not max(temp11-100, 0) < i < min(temp12+100, bin_img.shape[0]) or not max(temp21-100,0) < j < min(temp22+100, bin_img.shape[1]):
+                bin_img[i, j] = 0
+                continue
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))

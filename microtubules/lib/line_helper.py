@@ -3,6 +3,36 @@ import math
 import cv2 as cv
 
 
+def should_include(image, pix1, pix2, thres, gap):
+    pix1 = np.array(pix1)
+    pix2 = np.array(pix2)
+    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=thres, maxLineGap=gap)
+    if lines is None:
+        return False
+    d_1 = (pix1[0] - pix2[0]) / (pix1[1] - pix2[1] + 0.001)
+
+    comp_angle = math.atan(d_1) + math.pi if math.atan(d_1) < 0 else math.atan(d_1)
+    for line in lines:
+        y1, x1, y2, x2 = line[0]
+
+        p1 = np.array([x1, y1])
+        p2 = np.array([x2, y2])
+        d = (x1 - x2) / (y1 - y2 + 0.001)
+        angle = math.atan(d) + math.pi if math.atan(d) < 0 else math.atan(d)
+        rotation = abs(angle - comp_angle)
+        print('line: ', p1, p2)
+        if rotation > 0.2:
+            print(rotation)
+            continue
+        d1 = abs(np.cross(p1 - pix1, pix2 - p1) / np.linalg.norm(pix2 - pix1))
+        d2 = abs(np.cross(p2 - pix2, pix1 - p2) / np.linalg.norm(pix2 - pix1))
+        if d1 + d2 > 18:
+            print(d1, ' ', d2)
+            continue
+        return True
+    return False
+
+
 def line_detect_possible_demo(image,pix1,pix2,thres, gap):
     w1 = 0.005
     w2 = 15

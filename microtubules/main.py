@@ -15,14 +15,18 @@ import typing
 def main(
         draw_layer: 'napari.layers.Shapes',
         image_layer: 'napari.layers.Image',
-        struct_size=7,
+        struct_size=10,
         start_frame=0,
         end_frame=121,
         Hough_threshold=15,
-        Hough_gap=10,
+        Hough_gap=20,
         thres_ratio=1.0,
         options='show segmentation'
 ) -> typing.List[napari.types.LayerDataTuple]:
+    # Hough threshold: 60 -> pixel > 60
+    # 15 -> pixel > 30
+    # choose as high as possible
+
     frame2line = {}
     if draw_layer is not None:
         lines = draw_layer.data
@@ -40,7 +44,7 @@ def main(
     tiff_loader = TiffLoader(video)
     if start_frame not in frame2line:
         print("Please draw a line to specify a microtubule")
-        return []
+        return [None]
     # select a line to detect the corresponding microtubule
     for i in range(start_frame, min(end_frame, len(video))):
         img = tiff_loader.tiff_gray_image[i]
