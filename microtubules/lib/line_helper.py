@@ -18,8 +18,6 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
     if lines is None:
         cv.imshow('no hough lines', image)
         return
-    # h = []
-    # heapq.heapify(h)
     for line in lines:
         # print(line)
         y1,x1,y2,x2 = line[0]
@@ -30,7 +28,9 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
         d = (x1 - x2) / (y1 - y2 + 0.001)
         angle = math.atan(d) + math.pi if math.atan(d) < 0 else math.atan(d)
         rotation = w2 * abs(angle-comp_angle)
-        main_length = 0.1*math.sqrt((x1-x2)**2 + (y1-y2)**2)
+        # angle < 17 degree: reward
+        # angle > 17: penalty
+        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(0.3 - rotation/w2)
 
         loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
         loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length

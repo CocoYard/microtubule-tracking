@@ -70,8 +70,8 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
 
     """ 4. solve the cross problem by opening in one direction """
     temp = bin_img.copy()
-    bin_img = opening(bin_img, k//2, derivative)
-    bin_img = close_open(bin_img, k, derivative)
+    # bin_img = opening(bin_img, k//2, derivative)
+    # bin_img = close_open(bin_img, k, derivative)
     # bin_img = closing(bin_img, k, derivative)
 
     _, label = cv.connectedComponents(bin_img)
@@ -87,17 +87,16 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     # target_label = np.argmax(counts)
     # all label indices which are inside the rectangle area formed by the end points
     target_labels = np.where(counts != 0)[0]
-    targets = []
+    targets = set()
     """ 5. find all connected labels in the rectangle area formed by the input """
-    if len(target_labels) > 1:
-        for labeli in target_labels:
-            if labeli == np.argmax(counts):
-                targets.append(labeli)
-            elif counts[labeli]/counts_all[labeli] > 0.6:
-                targets.append(labeli)
-    else:
-        targets = target_labels
-    targets = np.array(targets)
+    for i in range(max(temp11,0), min(temp12, bin_img.shape[0])):
+        for j in range(max(temp21,0), min(temp22, bin_img.shape[1])):
+            if bin_img[i, j] != 0:
+                p3 = np.array([i, j])
+                d = abs(np.cross(np.array(pix2) - np.array(pix1), p3 - np.array(pix1)) / np.linalg.norm(np.array(pix2) - np.array(pix1)))
+                if d < 15:
+                    targets.add(label[i, j])
+    targets = list(targets)
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label

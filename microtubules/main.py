@@ -18,7 +18,7 @@ def main(
         struct_size=7,
         start_frame=0,
         end_frame=121,
-        Hough_threshold=15,
+        Hough_threshold=30,
         Hough_gap=10,
         thres_ratio=1.0,
         options='show segmentation'
