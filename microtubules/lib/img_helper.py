@@ -35,6 +35,7 @@ def erosion(img_bin, k, t):
     img_bin = cv.erode(img_bin, kernel, iterations=t)
     return img_bin
 
+
 # preallocate empty array and assign slice by chrisaycock
 # at https://stackoverflow.com/questions/30399534/shift-elements-in-a-numpy-array
 def shift(arr, num, fill_value=np.nan):
@@ -56,7 +57,7 @@ def closing(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for j in range(k):
             mid = round(j * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for i in range(low, high):
                 kernel[i, j] = 1
         up, down = 0, 0
@@ -79,7 +80,7 @@ def closing(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for j in range(low, high):
                 kernel[i, j] = 1
         front, back = 0, 0
@@ -109,7 +110,7 @@ def opening(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for j in range(k):
             mid = round(j * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for i in range(low, high):
                 kernel[i, j] = 1
         up, down = 0, 0
@@ -132,7 +133,7 @@ def opening(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for j in range(low, high):
                 kernel[i, j] = 1
         front, back = 0, 0
@@ -161,7 +162,7 @@ def close_open(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for j in range(k):
             mid = round(j * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for i in range(low, high):
                 kernel[i, j] = 1
         up, down = 0, 0
@@ -184,7 +185,7 @@ def close_open(img_bin, k, d):
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
-            low, high = max(0, round(mid - k/5)), min(k, round(mid + k/5))
+            low, high = max(0, round(mid - 1)), min(k, round(mid))
             for j in range(low, high):
                 kernel[i, j] = 1
         front, back = 0, 0
