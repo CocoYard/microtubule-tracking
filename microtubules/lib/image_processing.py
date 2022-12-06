@@ -125,7 +125,8 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                     bin_img[i, j] = 0
     bin_img = bin_img.astype(np.uint8)
     """ additional function, thinning """
-    skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)
+    # skeleton = (medial_axis(bin_img) * 255).astype(np.uint8)
+    skeleton=[]
     """"""
     # result = generic_filter(skeleton, lineEnds, (3, 3))
     # end_points = findEnds(result)

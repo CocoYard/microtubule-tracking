@@ -56,7 +56,7 @@ def main(
         tempv[i] = temp * 257
         tempv1[i] = temp1 * 257
         binv[i] = first_bin * 257
-        thinv[i] = skltn * 257
+        # thinv[i] = skltn * 257
         hglinesv[i] = hglines * 257
         hglinev[i] = hgline * 257
         print(i)

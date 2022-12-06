@@ -11,7 +11,17 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
     tgt_hgline = blank.copy()
     d_1 = (pix1[0] - pix2[0]) / (pix1[1] - pix2[1] + 0.001)
     comp_angle = math.atan(d_1) + math.pi if math.atan(d_1) < 0 else math.atan(d_1)
-    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=thres, maxLineGap=gap)
+    lines1 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=40, maxLineGap=20)
+    lines2 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=30, maxLineGap=10)
+    lines3 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=15, maxLineGap=5)
+    if lines1 is None:
+        if lines2 is None:
+            lines = lines3
+        else:
+            lines = np.concatenate((lines2,lines3),axis=0)
+    else:
+        lines = np.concatenate((lines1, lines2, lines3), axis=0)
+    # lines = np.concatenate((lines1,lines2,lines3),axis=0)
     out = []
     min_loss = 100000
     out_d = 0
@@ -30,7 +40,7 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
         rotation = w2 * abs(angle-comp_angle)
         # angle < 17 degree: reward
         # angle > 17: penalty
-        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(0.3 - rotation/w2)
+        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(0.2 - rotation/w2)
 
         loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
         loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length
