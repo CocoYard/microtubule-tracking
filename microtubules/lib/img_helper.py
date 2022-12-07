@@ -16,7 +16,7 @@ def thresholding(img, k):
     return img_bin
 
 
-def denosing(img):
+def denoising(img):
     img = np.array(img.astype(np.uint8))
     # blured = cv.medianBlur(img, 11)
     blured = img

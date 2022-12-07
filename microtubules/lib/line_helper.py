@@ -3,7 +3,23 @@ import math
 import cv2 as cv
 
 
-def line_detect_possible_demo(image,pix1,pix2,thres, gap):
+def line_detect_possible_demo(image,pix1,pix2):
+    pix1 = np.array(pix1)
+    pix2 = np.array(pix2)
+    length = np.linalg.norm(pix2 - pix1)
+    if length > 150:
+        thres = 50
+        gap = 20
+    elif length > 80:
+        thres = 30
+        gap = 15
+    elif length > 50:
+        thres = 20
+        gap = 10
+    else:
+        thres = 10
+        gap = 5
+    print('thres, gap = ', thres, ' ', gap)
     w1 = 0.005
     w2 = 15
     blank = np.zeros(image.shape)
@@ -11,17 +27,7 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
     tgt_hgline = blank.copy()
     d_1 = (pix1[0] - pix2[0]) / (pix1[1] - pix2[1] + 0.001)
     comp_angle = math.atan(d_1) + math.pi if math.atan(d_1) < 0 else math.atan(d_1)
-    lines1 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=40, maxLineGap=20)
-    lines2 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=30, maxLineGap=10)
-    lines3 = cv.HoughLinesP(image, 1, np.pi / 180, threshold=15, maxLineGap=5)
-    if lines1 is None:
-        if lines2 is None:
-            lines = lines3
-        else:
-            lines = np.concatenate((lines2,lines3),axis=0)
-    else:
-        lines = np.concatenate((lines1, lines2, lines3), axis=0)
-    # lines = np.concatenate((lines1,lines2,lines3),axis=0)
+    lines = cv.HoughLinesP(image, 1, np.pi / 180, threshold=thres, maxLineGap=gap)
     out = []
     min_loss = 100000
     out_d = 0
@@ -38,20 +44,22 @@ def line_detect_possible_demo(image,pix1,pix2,thres, gap):
         d = (x1 - x2) / (y1 - y2 + 0.001)
         angle = math.atan(d) + math.pi if math.atan(d) < 0 else math.atan(d)
         rotation = w2 * abs(angle-comp_angle)
-        # angle < 17 degree: reward
-        # angle > 17: penalty
-        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(0.2 - rotation/w2)
-
-        loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
-        loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length
-        loss = min(loss1,loss2)
+        distance = min(w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2),
+                       w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2))
+        print(distance)
+        moving = abs(np.cross(pix1 - pix2, pix1 - (p1 + p2) / 2) / length)
+        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(rotation*10 + moving - 15)/100
+        # loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
+        # loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length
+        # loss = min(loss1,loss2)
+        loss = distance + rotation + main_length
         if loss < min_loss:
             tgt_hgline = draw_line(blank, x1, y1, x2, y2) * 255
             min_loss = loss
             out = line
             out_d = d
-            # print('selected line ', line, loss - rotation + main_length, ' and ', rotation,
-            #       ' and ', - main_length)
+            print('selected line ', line, 'loss = ', loss, distance, ' and ', rotation/w2,
+                  ' and ', main_length)
     return out, out_d, hglines, tgt_hgline
 
 
