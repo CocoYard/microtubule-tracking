@@ -7,9 +7,9 @@ def line_detect_possible_demo(image,pix1,pix2):
     pix1 = np.array(pix1)
     pix2 = np.array(pix2)
     length = np.linalg.norm(pix2 - pix1)
-    if length > 150:
+    if length > 130:
         thres = 50
-        gap = 20
+        gap = 25
     elif length > 80:
         thres = 30
         gap = 15
