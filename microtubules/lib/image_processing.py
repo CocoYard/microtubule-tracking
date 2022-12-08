@@ -34,7 +34,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
     """ 1. use Clahe to adjust the global contrast """
+
     img2, img = denoising(img)
+
+
     """ 2. choose threshold to get binary image """
     temp11 = max(min(pix1[0], pix2[0]) - 5, 0)
     temp12 = min(max(pix1[0], pix2[0]) + 5, img.shape[0])
@@ -51,6 +54,10 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     thres = total / count_nonzero * threshold
     print('thres = ', thres)
     """ 3. do threshold """
+    test = adaptive_thresholding(img, img2, thres)
+    test = normal_closing(test,3)
+    test = normal_opening(test, 3)
+
     bin_img = thresholding(img, thres)
     img2 = thresholding(img2, thres-5)
     img2 = img2.astype(np.uint8)
@@ -61,11 +68,15 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     bin_img = crop_img(bin_img,max(temp11-100,0), min(temp12+100, bin_img.shape[0]),
                        max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
 
-    first_bin = bin_img.copy()
+    temp = bin_img.copy()
+    bin_img = normal_opening(bin_img,3)
+
+
+    first_bin = test.copy()
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
-    temp = bin_img.copy()
+    # temp = bin_img.copy()
     # bin_img = opening(bin_img, k//2, derivative)
     # bin_img = close_open(bin_img, k, derivative)
     # bin_img = closing(bin_img, k, derivative)
@@ -75,6 +86,8 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     counts_all = np.bincount(np.ndarray.flatten(label))
     counts_all[0] = 0
     # label -> number of label
+
+
     counts = np.bincount(np.ndarray.flatten(label[temp11: temp12, temp21:temp22]))
 
     # set the background label as 0
@@ -85,17 +98,31 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     target_labels = np.where(counts != 0)[0]
     targets = set()
     """ 5. find all connected labels in the rectangle area formed by the input """
-    for i in range(max(temp11,0), min(temp12, bin_img.shape[0])):
-        for j in range(max(temp21,0), min(temp22, bin_img.shape[1])):
+    for i in range(max(temp11+3,0), min(temp12-3, bin_img.shape[0])):
+        for j in range(max(temp21+3,0), min(temp22-3, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(np.array(pix2) - np.array(pix1), p3 - np.array(pix1)) / np.linalg.norm(np.array(pix2) - np.array(pix1)))
-                if d < 15:
+                if d < 5:
                     targets.add(label[i, j])
+
     targets = list(targets)
+    if len(targets) ==0:
+        targets = set()
+        for i in range(max(temp11-5, 0), min(temp12+5, bin_img.shape[0])):
+            for j in range(max(temp21-5, 0), min(temp22+5, bin_img.shape[1])):
+                if bin_img[i, j] != 0:
+                    p3 = np.array([i, j])
+                    d = abs(np.cross(np.array(pix2) - np.array(pix1), p3 - np.array(pix1)) / np.linalg.norm(
+                        np.array(pix2) - np.array(pix1)))
+                    if d < 15:
+                        targets.add(label[i, j])
+    targets = list(targets)
+    print(targets,'asdasdaf')
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label
+    bin_img = normal_closing(bin_img, 3)
     temp1 = bin_img.copy()
     [[y1,x1,y2,x2]], derivative, hglines, hgline = line_detect_possible_demo(bin_img,pix1,pix2)
     bin_img = close_open(bin_img, k, derivative)
