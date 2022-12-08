@@ -5,6 +5,7 @@ from lib.load_data import TiffLoader
 from lib import image_processing
 from magicgui import magicgui
 from lib.img_helper import darken
+import matplotlib.pyplot as plt
 import typing
 
 
@@ -34,6 +35,7 @@ def main(
     thinv = video.copy()
     hglinesv = video.copy()
     hglinev = video.copy()
+    length = []
 
     tiff_loader = TiffLoader(video)
     if start_frame not in frame2line:
@@ -44,7 +46,7 @@ def main(
         img = tiff_loader.tiff_gray_image[i]
         if i in frame2line:
             line = frame2line[i]
-        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines, hgline = image_processing.detectLine(img, line,
+        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines, hgline, l = image_processing.detectLine(img, line,
                                                                                                              struct_size, thres_ratio)
         if end_points == 'err':
             print("error occured")
@@ -57,8 +59,14 @@ def main(
         # thinv[i] = skltn * 257
         hglinesv[i] = hglines * 257
         hglinev[i] = hgline * 257
+        length.append(l)
         print(i)
         print('new end points = ', end_points)
+    length = np.array(length)
+    x = range(len(length))
+    plt.plot(x,length,color='r')
+    plt.legend(loc="best")
+    plt.show()
 
     layer_type = 'image'
     metadata = {

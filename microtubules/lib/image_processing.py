@@ -69,7 +69,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                        max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
 
     temp = bin_img.copy()
-    bin_img = normal_opening(bin_img,3)
+    bin_img = normal_opening(bin_img,2)
 
 
     first_bin = bin_img.copy()
@@ -154,4 +154,4 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     # result = generic_filter(skeleton, lineEnds, (3, 3))
     # end_points = findEnds(result)
     end_points = [p1, p2]
-    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines, hgline
+    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines, hgline, l
