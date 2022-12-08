@@ -54,9 +54,9 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     thres = total / count_nonzero * threshold
     print('thres = ', thres)
     """ 3. do threshold """
-    test = adaptive_thresholding(img, img2, thres)
-    test = normal_closing(test,3)
-    test = normal_opening(test, 3)
+    # test = adaptive_thresholding(img, img2, thres)
+    # test = normal_closing(test,3)
+    # test = normal_opening(test, 3)
 
     bin_img = thresholding(img, thres)
     img2 = thresholding(img2, thres-5)
@@ -72,7 +72,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     bin_img = normal_opening(bin_img,3)
 
 
-    first_bin = test.copy()
+    first_bin = bin_img.copy()
     bin_img = bin_img.astype(np.uint8)
 
     """ 4. solve the cross problem by opening in one direction """
