@@ -59,7 +59,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     # test = normal_opening(test, 3)
 
     bin_img = thresholding(img, thres)
-    img2 = thresholding(img2, thres-5)
+    img2 = normal_threshold(img2, thres-5)
     img2 = img2.astype(np.uint8)
     img2 = normal_opening(img2, 2)  #denoise
 

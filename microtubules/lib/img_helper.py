@@ -25,10 +25,12 @@ def adaptive_thresholding(img,img2,thres):
 
     return  np.array(new_img.astype(np.uint8))
 
-
+def normal_threshold(img, k):
+    _,img_bin = cv.threshold(img,k,img.max(),cv.THRESH_BINARY)
+    return img_bin
 
 def thresholding(img, k):
-    img_bin = cv.adaptiveThreshold(img, img.max(), cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,10)
+    img_bin = cv.adaptiveThreshold(img, img.max(), cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,2)
     return img_bin
 
 
