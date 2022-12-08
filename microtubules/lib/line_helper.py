@@ -19,9 +19,10 @@ def line_detect_possible_demo(image,pix1,pix2):
     else:
         thres = 15
         gap = 5
-    print('thres, gap = ', thres, ' ', gap)
+    # print('thres, gap = ', thres, ' ', gap)
     w1 = 0.005
     w2 = 15
+    w3 = 1
     blank = np.zeros(image.shape)
     hglines = blank.copy()
     tgt_hgline = blank.copy()
@@ -46,9 +47,10 @@ def line_detect_possible_demo(image,pix1,pix2):
         rotation = w2 * abs(angle-comp_angle)
         distance = min(w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2),
                        w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2))
-        print(distance)
+        # print(distance)
         moving = abs(np.cross(pix1 - pix2, pix1 - (p1 + p2) / 2) / length)
-        main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(rotation*10 + moving - 15)/100
+        main_length = length/math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) * w3
+        # main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(rotation*10 + moving - 15)/100
         # loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
         # loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length
         # loss = min(loss1,loss2)
@@ -58,8 +60,8 @@ def line_detect_possible_demo(image,pix1,pix2):
             min_loss = loss
             out = line
             out_d = d
-            print('selected line ', line, 'loss = ', loss, distance, ' and ', rotation/w2,
-                  ' and ', main_length)
+            # print('selected line ', line, 'loss = ', loss, distance, ' and ', rotation/w2,
+            #       ' and ', main_length)
     return out, out_d, hglines, tgt_hgline
 
 

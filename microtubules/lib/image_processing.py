@@ -36,7 +36,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     """ 1. use Clahe to adjust the global contrast """
 
     img2, img = denoising(img)
-
+    temp = img2.copy()
 
     """ 2. choose threshold to get binary image """
     temp11 = max(min(pix1[0], pix2[0]) - 5, 0)
@@ -68,7 +68,7 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     bin_img = crop_img(bin_img,max(temp11-100,0), min(temp12+100, bin_img.shape[0]),
                        max(temp21-100,0), min(temp22+100, bin_img.shape[1]))
 
-    temp = bin_img.copy()
+
     bin_img = normal_opening(bin_img,2)
 
 
@@ -118,14 +118,15 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
                     if d < 15:
                         targets.add(label[i, j])
     targets = list(targets)
-    print(targets,'asdasdaf')
+
     # extract all pixels of the target labels
     label = np.isin(label, targets).astype(np.uint8)
     bin_img = bin_img * label
-    bin_img = normal_closing(bin_img, 3)
+    bin_img = normal_closing(bin_img, 2)
     temp1 = bin_img.copy()
     [[y1,x1,y2,x2]], derivative, hglines, hgline = line_detect_possible_demo(bin_img,pix1,pix2)
     bin_img = close_open(bin_img, k, derivative)
+    temp2 = bin_img.copy()
     # bin_img = closing(bin_img, k, derivative)
     # bin_img = opening(bin_img, k, derivative)
 
@@ -138,8 +139,8 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
 
     """ delete the lines whose main part not in the incline area """
     # delete remote points to the Hough line
-    for i in range(max(temp11-100,0), min(temp12+100, bin_img.shape[0])):
-        for j in range(max(temp21-100,0), min(temp22+100, bin_img.shape[1])):
+    for i in range(max(temp11-120,0), min(temp12+120, bin_img.shape[0])):
+        for j in range(max(temp21-120,0), min(temp22+120, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))
@@ -154,4 +155,4 @@ def detectLine(img, line, k=10, gap=10, threshold=1, hgthres=20):
     # result = generic_filter(skeleton, lineEnds, (3, 3))
     # end_points = findEnds(result)
     end_points = [p1, p2]
-    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines, hgline, l
+    return end_points, skeleton, bin_img, img, temp, temp1, first_bin, hglines, hgline, l, temp2

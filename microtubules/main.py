@@ -33,6 +33,7 @@ def main(
     tempv1 = video.copy()
     binv = video.copy()
     thinv = video.copy()
+    tempv2 = video.copy()
     hglinesv = video.copy()
     hglinev = video.copy()
     length = []
@@ -46,7 +47,7 @@ def main(
         img = tiff_loader.tiff_gray_image[i]
         if i in frame2line:
             line = frame2line[i]
-        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines, hgline, l = image_processing.detectLine(img, line,
+        end_points, skltn, thres_img, denoise, temp, temp1, first_bin, hglines, hgline, l, temp2 = image_processing.detectLine(img, line,
                                                                                                              struct_size, thres_ratio)
         if end_points == 'err':
             print("error occured")
@@ -54,6 +55,7 @@ def main(
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
         tempv[i] = temp * 257
+        tempv2[i] = temp2 * 257
         tempv1[i] = temp1 * 257
         binv[i] = first_bin * 257
         # thinv[i] = skltn * 257
@@ -65,20 +67,20 @@ def main(
     length = np.array(length)
     x = range(len(length))
     plt.plot(x,length,color='r')
-    plt.legend(loc="best")
+    # plt.legend(loc="best")
     plt.show()
 
     layer_type = 'image'
     metadata = {
-        'name': 'temp1',
+        'name': 'components',
         'colormap': 'gray'
     }
     metadata1 = {
-        'name': 'temp',
+        'name': 'gaussian blur',
         'colormap': 'gray'
     }
     metadata2 = {
-        'name': 'initial bin img',
+        'name': 'threshold img',
         'colormap': 'gray'
     }
     metadata3 = {
@@ -91,11 +93,15 @@ def main(
         'colormap': 'gray'
     }
     metadata5 = {
-        'name': 'tgt_ghline',
+        'name': 'tgt_line',
+        'colormap': 'gray'
+    }
+    metadata6 = {
+        'name': 'cutting',
         'colormap': 'gray'
     }
 
-    return [(tempv1, metadata, layer_type), (tempv, metadata1, layer_type), (binv, metadata2, layer_type), (video, metadata3, layer_type),
+    return [ (tempv2, metadata6, layer_type), (tempv1, metadata, layer_type), (tempv, metadata1, layer_type), (binv, metadata2, layer_type), (video, metadata3, layer_type),
             (hglinesv, metadata4, layer_type), (hglinev, metadata5, layer_type)]
 
 
