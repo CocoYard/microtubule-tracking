@@ -3,7 +3,7 @@ import math
 import cv2 as cv
 
 
-def line_detect_possible_demo(image,pix1,pix2):
+def line_detect_possible_demo(image, pix1, pix2):
     pix1 = np.array(pix1)
     pix2 = np.array(pix2)
     length = np.linalg.norm(pix2 - pix1)
@@ -19,10 +19,9 @@ def line_detect_possible_demo(image,pix1,pix2):
     else:
         thres = 15
         gap = 5
-    # print('thres, gap = ', thres, ' ', gap)
+    print('thres, gap = ', thres, ' ', gap)
     w1 = 0.005
     w2 = 15
-    w3 = 1
     blank = np.zeros(image.shape)
     hglines = blank.copy()
     tgt_hgline = blank.copy()
@@ -33,35 +32,24 @@ def line_detect_possible_demo(image,pix1,pix2):
     min_loss = 100000
     out_d = 0
     if lines is None:
-        cv.imshow('no hough lines', image)
         return
     for line in lines:
-        # print(line)
-        y1,x1,y2,x2 = line[0]
+        y1, x1, y2, x2 = line[0]
         hglines += draw_line(blank, x1, y1, x2, y2) * 255
-
-        p1 = np.array([x1,y1])
-        p2 = np.array([x2,y2])
+        p1 = np.array([x1, y1])
+        p2 = np.array([x2, y2])
         d = (x1 - x2) / (y1 - y2 + 0.001)
         angle = math.atan(d) + math.pi if math.atan(d) < 0 else math.atan(d)
         rotation = w2 * abs(angle-comp_angle)
         distance = min(w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2),
                        w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2))
-        # print(distance)
-        moving = abs(np.cross(pix1 - pix2, pix1 - (p1 + p2) / 2) / length)
-        main_length = length/math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) * w3
-        # main_length = math.sqrt((x1-x2)**2 + (y1-y2)**2)*(rotation*10 + moving - 15)/100
-        # loss1 = w1*(np.linalg.norm(p1-pix1)**2+np.linalg.norm(p2-pix2)**2) + rotation - main_length
-        # loss2 = w1*(np.linalg.norm(p1-pix2)**2+np.linalg.norm(p2-pix1)**2) + rotation - main_length
-        # loss = min(loss1,loss2)
+        main_length = length/math.sqrt((x1-x2)**2 + (y1-y2)**2)
         loss = distance + rotation + main_length
         if loss < min_loss:
             tgt_hgline = draw_line(blank, x1, y1, x2, y2) * 255
             min_loss = loss
             out = line
             out_d = d
-            # print('selected line ', line, 'loss = ', loss, distance, ' and ', rotation/w2,
-            #       ' and ', main_length)
     return out, out_d, hglines, tgt_hgline
 
 
@@ -92,40 +80,3 @@ def draw_line(mat, x0, y0, x1, y1, inplace=False):
     mat[x, y] = 1
     if not inplace:
         return mat if not transpose else mat.T
-
-
-def lineEnds(P):
-    ## Central pixel and just one other must be set to be a line end
-    return 255 * ((P[4] == 255) and np.sum(P) == 510)
-
-
-def findEnds(bin_img):
-    """
-    find the endpoints of a connected binary image by searching for
-    the farthest points in the connected image.
-    Parameters
-    ----------
-    bin_img : (0 - 255) 2d array
-        it may contain more than one connected component
-
-    Returns
-    -------
-    output : 2d array, one for each endpoint
-    """
-    pts = []
-    for i in range(bin_img.shape[0]):
-        for j in range(bin_img.shape[1]):
-            if bin_img[i, j] != 0:
-                pts.append([i, j])
-    max_dis = 0
-    output = 'err'
-    # find the farthest distance in the binary image
-    for p1 in pts:
-        for p2 in pts:
-            p1 = np.array(p1)
-            p2 = np.array(p2)
-            d = np.linalg.norm(p2 - p1)
-            if d > max_dis:
-                max_dis = d
-                output = np.array([p1, p2])
-    return output

@@ -2,7 +2,6 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import numpy as np
 import cv2 as cv
-from matplotlib import pyplot as plt
 
 
 def crop_img(img, x1, x2, y1, y2):
@@ -11,23 +10,11 @@ def crop_img(img, x1, x2, y1, y2):
     new_img = mask * img
     return new_img
 
-def adaptive_thresholding(img,img2,thres):
-    new_img = img.copy()
-    img2 = cv.GaussianBlur(img, (5, 5),10,10,borderType=cv.BORDER_REPLICATE)
-    # img2 = cv.medianBlur(img,11)
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
-
-            if  img[i,j] -img2[i,j] < 30 and img[i,j] > thres: ##img[i,j] -img2[i,j] < -2 or img[i,j] > thres
-                new_img[i,j]=255
-            else:
-                new_img[i,j]=0
-
-    return  np.array(new_img.astype(np.uint8))
 
 def normal_threshold(img, k):
-    _,img_bin = cv.threshold(img,k,img.max(),cv.THRESH_BINARY)
+    _,img_bin = cv.threshold(img, k, img.max(), cv.THRESH_BINARY)
     return img_bin
+
 
 def thresholding(img, k):
     img_bin = cv.adaptiveThreshold(img, img.max(), cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,2)
@@ -37,9 +24,6 @@ def thresholding(img, k):
 def denoising(img):
     img = np.array(img.astype(np.uint8))
     blured = cv.medianBlur(img, 5)
-    # plt.hist(blured.ravel(), bins=256, range=(0.0, 256), fc='k', ec='k')  # calculating histogram
-    # plt.show()
-    # blured = img
     im = np.array(blured.astype(np.uint8))
     clahe = cv.createCLAHE(clipLimit=None, tileGridSize=(8, 8))
     im = clahe.apply(im)
@@ -291,7 +275,6 @@ def darken(polygon, img, ratio):
     -------
     None
     """
-    # k
     polygon = polygon.round().astype('uint')
     plygn = Polygon(polygon)
     # find the square boundary
