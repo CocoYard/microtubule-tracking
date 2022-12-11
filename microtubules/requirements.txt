@@ -1,8 +1,7 @@
 magicgui==0.6.1
+matplotlib==3.3.4
 napari==0.4.17
 numpy==1.20.1
 opencv_python==4.6.0.66
 Pillow==9.3.0
-scikit_image==0.18.1
-scipy==1.6.2
-skimage==0.0
+Shapely==1.8.5.post1
