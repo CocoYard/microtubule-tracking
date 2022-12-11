@@ -3,7 +3,7 @@ import math
 import cv2 as cv
 
 
-def line_detect_possible_demo(image, pix1, pix2):
+def select_line(image, pix1, pix2):
     pix1 = np.array(pix1)
     pix2 = np.array(pix2)
     length = np.linalg.norm(pix2 - pix1)
@@ -19,7 +19,6 @@ def line_detect_possible_demo(image, pix1, pix2):
     else:
         thres = 15
         gap = 5
-    print('thres, gap = ', thres, ' ', gap)
     w1 = 0.005
     w2 = 15
     blank = np.zeros(image.shape)

@@ -6,18 +6,18 @@ import cv2 as cv
 
 def crop_img(img, x1, x2, y1, y2):
     mask = np.zeros(img.shape)
-    mask[x1:x2,y1:y2] = 1
+    mask[x1:x2, y1:y2] = 1
     new_img = mask * img
     return new_img
 
 
 def normal_threshold(img, k):
-    _,img_bin = cv.threshold(img, k, img.max(), cv.THRESH_BINARY)
+    _, img_bin = cv.threshold(img, k, img.max(), cv.THRESH_BINARY)
     return img_bin
 
 
-def thresholding(img, k):
-    img_bin = cv.adaptiveThreshold(img, img.max(), cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,2)
+def thresholding(img):
+    img_bin = cv.adaptiveThreshold(img, img.max(), cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2)
     return img_bin
 
 
@@ -69,9 +69,9 @@ def closing(img_bin, k, d):
             if kernel[i, 0] == 1:
                 up = i
                 break
-        for i in range(k-1, -1, -1):
+        for i in range(k - 1, -1, -1):
             if kernel[i, -1] == 1:
-                down = k-1-i
+                down = k - 1 - i
                 break
         if up - down > 1:
             for j in range(k):
@@ -80,7 +80,7 @@ def closing(img_bin, k, d):
             for j in range(k):
                 kernel[:, j] = shift(kernel[:, j], 1, 0)
     else:
-        d = 1/d
+        d = 1 / d
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
@@ -92,9 +92,9 @@ def closing(img_bin, k, d):
             if kernel[-1, j] == 1:
                 front = j
                 break
-        for j in range(k-1, -1, -1):
+        for j in range(k - 1, -1, -1):
             if kernel[0, j] == 1:
-                back = k-1-j
+                back = k - 1 - j
                 break
         if front - back > 1:
             for i in range(k):
@@ -122,9 +122,9 @@ def opening(img_bin, k, d):
             if kernel[i, 0] == 1:
                 up = i
                 break
-        for i in range(k-1, -1, -1):
+        for i in range(k - 1, -1, -1):
             if kernel[i, -1] == 1:
-                down = k-1-i
+                down = k - 1 - i
                 break
         if up - down > 1:
             for j in range(k):
@@ -133,7 +133,7 @@ def opening(img_bin, k, d):
             for j in range(k):
                 kernel[:, j] = shift(kernel[:, j], 1, 0)
     else:
-        d = 1/d
+        d = 1 / d
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
@@ -145,9 +145,9 @@ def opening(img_bin, k, d):
             if kernel[-1, j] == 1:
                 front = j
                 break
-        for j in range(k-1, -1, -1):
+        for j in range(k - 1, -1, -1):
             if kernel[0, j] == 1:
-                back = k-1-j
+                back = k - 1 - j
                 break
         if front - back > 1:
             for i in range(k):
@@ -174,9 +174,9 @@ def close_open(img_bin, k, d):
             if kernel[i, 0] == 1:
                 up = i
                 break
-        for i in range(k-1, -1, -1):
+        for i in range(k - 1, -1, -1):
             if kernel[i, -1] == 1:
-                down = k-1-i
+                down = k - 1 - i
                 break
         if up - down > 1:
             for j in range(k):
@@ -185,7 +185,7 @@ def close_open(img_bin, k, d):
             for j in range(k):
                 kernel[:, j] = shift(kernel[:, j], 1, 0)
     else:
-        d = 1/d
+        d = 1 / d
         offset = round((k - d * k + 1) / 2)
         for i in range(k):
             mid = round(i * d) + offset
@@ -197,9 +197,9 @@ def close_open(img_bin, k, d):
             if kernel[-1, j] == 1:
                 front = j
                 break
-        for j in range(k-1, -1, -1):
+        for j in range(k - 1, -1, -1):
             if kernel[0, j] == 1:
-                back = k-1-j
+                back = k - 1 - j
                 break
         if front - back > 1:
             for i in range(k):
@@ -207,7 +207,7 @@ def close_open(img_bin, k, d):
         elif back - front > 1:
             for i in range(k):
                 kernel[i] = shift(kernel[i], 1, 0)
-        d = 1/d
+        d = 1 / d
 
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
 
@@ -288,13 +288,13 @@ def darken(polygon, img, ratio):
             if plygn.contains(Point(i, j)):
                 dists.append(plygn.boundary.distance(Point(i, j)))
     dmax = max(dists)
-    k = ratio / np.log(dmax/2 + 1)
+    k = ratio / np.log(dmax / 2 + 1)
     m = 0
 
     for j in range(left, right):
         for i in range(top, bot):
             if plygn.contains(Point(i, j)):
-                diff = k*np.log(dists[m]+1)
+                diff = k * np.log(dists[m] + 1)
                 m += 1
                 if diff > img[i, j]:
                     img[i, j] = 0

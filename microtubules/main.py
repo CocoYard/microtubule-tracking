@@ -1,4 +1,3 @@
-import PIL.ImageDraw
 import napari
 import numpy as np
 from lib.load_data import TiffLoader
@@ -9,10 +8,8 @@ import matplotlib.pyplot as plt
 import typing
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari.utils.notifications import (
-    ErrorNotification,
     Notification,
-    NotificationSeverity,
-    notification_manager,
+    NotificationSeverity
 )
 
 @magicgui(

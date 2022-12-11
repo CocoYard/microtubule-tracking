@@ -11,7 +11,7 @@
    1. Windows Powershell: `.\venv\Scripts\activate`
    2. MacOS/Linux Terminal: `. venv/bin/activate`
 4. The following only works if you successfully activated the virtual environment, otherwise you need to refer to python's official document for alternative ways.
-5. install all the dependencies in requirements.txt by run `pip install -r requirements.txt`
+5. install all the dependencies in requirements.txt by running `pip install -r requirements.txt`
 6. Run main.py by run `python main.py`
 
 ## Demo

@@ -11,13 +11,11 @@ def tiffToGray(img):
 def detectLine(img, line, k, threshold):
     """
         1. use Clahe to adjust the global contrast
-        2. choose threshold to get binary image & do threshold
+        2. choose threshold to get binary image & do thresholding
         3. solve the cross problem by opening in one direction
         4. find all connected components in the incline rectangle area formed by the input
         5. get all Hough lines
         6. delete remote points to the Hough line
-
-        additional function, thinning
     """
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
@@ -38,8 +36,8 @@ def detectLine(img, line, k, threshold):
                 count_nonzero += 1
                 total += thresholdmatrix[i, j]
     thres = total / count_nonzero * threshold
-    # do threshold
-    bin_img = thresholding(img, thres)
+    # do thresholding
+    bin_img = thresholding(img)
     img2 = normal_threshold(img2, thres - 5)
     img2 = img2.astype(np.uint8)
     img2 = normal_opening(img2, 2)
@@ -93,7 +91,7 @@ def detectLine(img, line, k, threshold):
     bin_img = normal_closing(bin_img, 2)
 
     """ 5. get all Hough lines """
-    ret = line_detect_possible_demo(bin_img, pix1, pix2)
+    ret = select_line(bin_img, pix1, pix2)
     if ret is None:
         return
     [[y1, x1, y2, x2]], derivative, hglines, hgline = ret
