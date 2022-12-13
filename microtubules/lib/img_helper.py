@@ -161,6 +161,7 @@ def opening(img_bin, k, d):
 
 
 def close_open(img_bin, k, d):
+    k = k // 2
     kernel = np.zeros((k, k), np.uint8)
     if -1 < d < 1:
         offset = round((k - d * k + 1) / 2)
@@ -210,7 +211,7 @@ def close_open(img_bin, k, d):
         d = 1 / d
 
     img_bin = cv.morphologyEx(img_bin, cv.MORPH_CLOSE, kernel)
-
+    k = k * 2
     if -1 < d < 1:
         up, down = 0, 0
         for i in range(k):
@@ -262,19 +263,17 @@ def normal_opening(img_bin, k):
 
 def darken(polygon, img, ratio):
     """
-    in place operate the img to make the local area darker, no output.
+    In place operate the img to make the local area darker, no output.
+
     Parameters
     ----------
     polygon : 2d array
-        the coordinates of the polygon in order.
+        The coordinates of the polygon in order.
     img : (0 - 255) 2d array
     ratio : float
-        darkening ratio
-
-    Returns
-    -------
-    None
+        Darkening ratio. Default to 84.
     """
+
     polygon = polygon.round().astype('uint')
     plygn = Polygon(polygon)
     # find the square boundary

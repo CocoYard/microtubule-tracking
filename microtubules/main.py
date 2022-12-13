@@ -12,6 +12,7 @@ from napari.utils.notifications import (
     NotificationSeverity
 )
 
+
 @magicgui(
     call_button="Calculate",
 )
@@ -59,6 +60,7 @@ def main(
         line = [[i, end_points[0][0], end_points[0][1]], [i, end_points[1][0], end_points[1][1]]]
         video[i] = thres_img * 257
         length.append(l)
+        print(end_points)
         print(i)
     length = np.array(length)
     x = range(len(length))

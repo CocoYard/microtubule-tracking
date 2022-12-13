@@ -1,7 +1,8 @@
-import numpy as np
-import cv2 as cv
-from lib.img_helper import *
-from lib.line_helper import *
+import sys
+import os
+sys.path.insert(0, os.getcwd() + '/lib')
+from img_helper import *
+from line_helper import *
 
 
 def tiffToGray(img):
@@ -10,16 +11,38 @@ def tiffToGray(img):
 
 def detectLine(img, line, k, threshold):
     """
-        1. use Clahe to adjust the global contrast
+        This is the main algorithm for detecting a target microtubule given. The steps are as following:
+        1. blur and use Clahe to adjust the global contrast
         2. choose threshold to get binary image & do thresholding
         3. solve the cross problem by opening in one direction
         4. find all connected components in the incline rectangle area formed by the input
         5. get all Hough lines
         6. delete remote points to the Hough line
+    Parameters
+    ----------
+    img : 2d array
+        The given original 0-255 grayscale numpy img matrix.
+    line : 2d array
+        The specify the target microtubule.
+    k : int
+        A hyper-parameter to control opening and closing struct size.
+    threshold : float
+        A hyper-parameter to adjust the threshold value of the step 2. Default to 1.0 and only in very rare case
+        will you need to change this value.
+
+    Returns
+    -------
+    end_points : 2d list
+        The new end points to specify the next frame's target microtubule.
+    bin_img : 2d array
+        The output segment of the target microtubule.
+    l : float
+        The length of the microtubule.
     """
+
     pix1 = [round(line[0][1]), round(line[0][2])]
     pix2 = [round(line[1][1]), round(line[1][2])]
-    """ 1. use Clahe to adjust the global contrast """
+    """ 1. blur and use Clahe to adjust the global contrast """
     img2, img = denoising(img)
 
     """ 2. choose threshold to get binary image """
@@ -95,7 +118,7 @@ def detectLine(img, line, k, threshold):
     if ret is None:
         return
     [[y1, x1, y2, x2]], derivative, hglines, hgline = ret
-    bin_img = close_open(bin_img, k, derivative)
+    bin_img = opening(bin_img, k, derivative)
 
     p1 = np.array([x1, y1])
     p2 = np.array([x2, y2])
@@ -106,8 +129,8 @@ def detectLine(img, line, k, threshold):
     l = np.linalg.norm(p2 - p1)
 
     """ 6. delete remote points to the Hough line """
-    for i in range(max(temp11 - 100, 0), min(temp12 + 100, bin_img.shape[0])):
-        for j in range(max(temp21 - 100, 0), min(temp22 + 100, bin_img.shape[1])):
+    for i in range(max(temp11 - 105, 0), min(temp12 + 105, bin_img.shape[0])):
+        for j in range(max(temp21 - 105, 0), min(temp22 + 105, bin_img.shape[1])):
             if bin_img[i, j] != 0:
                 p3 = np.array([i, j])
                 d = abs(np.cross(p2 - p1, p3 - p1) / np.linalg.norm(p2 - p1))

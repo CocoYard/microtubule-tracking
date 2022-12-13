@@ -4,6 +4,31 @@ import cv2 as cv
 
 
 def select_line(image, pix1, pix2):
+    """
+    Selects the target Hough line from a whole bunch of detected Hough lines.
+
+    Parameters
+    ----------
+    image : 2d array
+        Source image without Hough transformation yet.
+    pix1 : list
+        One of the endpoints' coordinates.
+    pix2 : list
+        The other endpoints' coordinates.
+
+    Returns
+    -------
+    None or the following:
+    out : 2d array
+        The selected Hough line
+    out_d : float
+        The selected Hough line's derivative.
+    hglines : 2d array
+        A drawn image of all Hough lines for displaying purpose.
+    tgt_hgline : list
+        A drawn image of the selected Hough line for displaying purpose.
+    """
+
     pix1 = np.array(pix1)
     pix2 = np.array(pix2)
     length = np.linalg.norm(pix2 - pix1)
